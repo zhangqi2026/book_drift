@@ -14,6 +14,11 @@
  Date: 14/03/2026 13:57:37
 */
 
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS `book` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+USE `book`;
+
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -133,5 +138,24 @@ CREATE TABLE `feedback`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id`(`user_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户反馈表' ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Table structure for book_statistics
+-- ----------------------------
+DROP TABLE IF EXISTS `book_statistics`;
+CREATE TABLE `book_statistics`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `stat_date` datetime NOT NULL COMMENT '统计时间（精确到秒）',
+  `total_books` int(11) NOT NULL DEFAULT 0 COMMENT '总书籍数',
+  `available_books` int(11) NOT NULL DEFAULT 0 COMMENT '可借阅书籍数',
+  `borrowed_books` int(11) NOT NULL DEFAULT 0 COMMENT '已借阅书籍数',
+  `total_users` int(11) NOT NULL DEFAULT 0 COMMENT '总用户数',
+  `total_borrows` int(11) NOT NULL DEFAULT 0 COMMENT '总借阅次数',
+  `total_donations` int(11) NOT NULL DEFAULT 0 COMMENT '总捐赠次数',
+  `active_users` int(11) NOT NULL DEFAULT 0 COMMENT '活跃用户数',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_stat_date`(`stat_date`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '书籍统计数据表' ROW_FORMAT = Compact;
 
 SET FOREIGN_KEY_CHECKS = 1;
