@@ -71,6 +71,14 @@ public interface BookClaimRecordService {
      * @return 是否成功
      */
     boolean claimBook(Integer bookId, Integer userId);
+    
+    /**
+     * 借书（认领书籍）并返回积分信息
+     * @param bookId 书籍 ID
+     * @param userId 用户 ID
+     * @return 增加的积分（认领人的积分）
+     */
+    Integer claimBookWithScore(Integer bookId, Integer userId);
 
     /**
      * 还书（归还书籍）
@@ -78,4 +86,11 @@ public interface BookClaimRecordService {
      * @return 是否成功
      */
     boolean returnBook(Integer recordId);
+    
+    /**
+     * 还书（归还书籍）并返回积分信息
+     * @param recordId 借书记录 ID
+     * @return 增加的积分
+     */
+    Integer returnBookWithScore(Integer recordId);
 }

@@ -589,7 +589,11 @@ export default {
         
         if (response.code === 20000) {
           const statusMsg = book.bookStatus === 1 ? '成功认领' : '成功重新认领'
-          this.$message.success(`${statusMsg}《${book.bookName}》！请在 7 天内归还～`)
+          let message = `${statusMsg}《${book.bookName}》！请在 7 天内归还～`
+          if (response.other && response.other.score) {
+            message += ` +${response.other.score}分`
+          }
+          this.$message.success(message)
           this.fetchBookList()
         } else {
           this.$message.error('认领失败：' + response.message)
@@ -686,7 +690,11 @@ export default {
         const response = await this.$axios.post(`/bookClaimRecord/return/${recordId}`)
         
         if (response.code === 20000) {
-          this.$message.success(`《${book.bookName}》归还成功！`)
+          let message = `《${book.bookName}》归还成功！`
+          if (response.other && response.other.score) {
+            message += ` +${response.other.score}分`
+          }
+          this.$message.success(message)
           this.fetchBookList()
         } else {
           this.$message.error('归还失败：' + response.message)
@@ -860,23 +868,33 @@ export default {
           if (response.code === 20000) {
             note.likeCount = Math.max(0, (note.likeCount || 0) - 1)
             note.isLiked = false
-            this.$message.success('已取消点赞')
+            let message = '已取消点赞'
+            if (response.other && response.other.score) {
+              message += '（笔记作者减少 -' + response.other.score + '分）'
+            }
+            this.$message.success(message)
           } else {
             this.$message.error('取消点赞失败：' + response.message)
           }
         } else {
-          // 点赞
-          response = await this.$axios.post(`/bookNote/like/${note.id}`, null, {
-            params: { userId: this.currentUser.id }
-          })
-          if (response.code === 20000) {
-            note.likeCount = (note.likeCount || 0) + 1
-            note.isLiked = true
-            this.$message.success('点赞成功！')
-          } else {
-            this.$message.error('点赞失败：' + response.message)
+            // 点赞
+            response = await this.$axios.post(`/bookNote/like/${note.id}`, null, {
+              params: { userId: this.currentUser.id }
+            })
+            if (response.code === 20000) {
+              note.likeCount = (note.likeCount || 0) + 1
+              note.isLiked = true
+              let message = '点赞成功！'
+              if (response.other && response.other.score) {
+                // 这是笔记作者获得的积分，不显示给当前点赞的用户
+                // 或者我们可以提示笔记作者会获得积分
+                message += '（笔记作者获得 +' + response.other.score + '分）'
+              }
+              this.$message.success(message)
+            } else {
+              this.$message.error('点赞失败：' + response.message)
+            }
           }
-        }
       } catch (error) {
         this.$message.error('操作失败：' + error.message)
       }
@@ -937,7 +955,11 @@ export default {
           }
           
           if (response.code === 20000) {
-            this.$message.success(this.noteFormMode === 'add' ? '添加成功！' : '修改成功！')
+            let message = this.noteFormMode === 'add' ? '添加成功！' : '修改成功！'
+            if (this.noteFormMode === 'add' && response.other && response.other.score) {
+              message += ` +${response.other.score}分`
+            }
+            this.$message.success(message)
             this.noteFormDialogVisible = false
             // 重新加载笔记列表
             await this.viewBookNotes(this.currentNoteBook)
@@ -1004,7 +1026,11 @@ export default {
           
           if (response.code === 20000) {
             this.$refs.donateFormRef.resetFields()
-            this.$message.success('捐赠成功！书籍已加入漂流列表~')
+            let message = '捐赠成功！书籍已加入漂流列表~'
+            if (response.other && response.other.score) {
+              message += ` +${response.other.score}分`
+            }
+            this.$message.success(message)
             this.fetchBookList()
           } else {
             this.$message.error('捐赠失败：' + response.message)

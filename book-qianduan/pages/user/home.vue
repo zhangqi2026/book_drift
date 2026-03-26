@@ -5,7 +5,7 @@
     
     <div class="stats-container">
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="6">
           <el-card class="stat-card" @click="goToBorrowedBooks" style="cursor: pointer;">
             <div class="stat-content">
               <i class="el-icon-reading stat-icon"></i>
@@ -16,7 +16,7 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
               <i class="el-icon-medal stat-icon"></i>
@@ -27,7 +27,7 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
               <i class="el-icon-document stat-icon"></i>
@@ -38,7 +38,54 @@
             </div>
           </el-card>
         </el-col>
+        <el-col :span="6">
+          <el-card class="stat-card" @click="goToRanking" style="cursor: pointer;">
+            <div class="stat-content">
+              <i class="el-icon-trophy stat-icon" style="color: #E6A23C;"></i>
+              <div class="stat-text">
+                <div class="stat-value">{{ userRank ? (userRank.rank > 100 ? '100+' : userRank.rank) : '-' }}</div>
+                <div class="stat-label">我的排名</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
       </el-row>
+    </div>
+    
+    <!-- 活跃度展示 -->
+    <div class="activity-section">
+      <el-card class="activity-card">
+        <div slot="header">
+          <span>我的活跃度</span>
+          <el-button type="text" size="small" style="float: right;" @click="goToRanking">查看排行榜</el-button>
+        </div>
+        <el-row :gutter="20">
+          <el-col :span="6">
+            <div class="activity-item">
+              <div class="activity-value">{{ userRank ? userRank.activityScore : 0 }}</div>
+              <div class="activity-label">总活跃度</div>
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="activity-item">
+              <div class="activity-value">{{ userRank ? userRank.dailyActivityScore : 0 }}</div>
+              <div class="activity-label">今日活跃度</div>
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="activity-item">
+              <div class="activity-value">{{ userRank ? userRank.weeklyActivityScore : 0 }}</div>
+              <div class="activity-label">本周活跃度</div>
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="activity-item">
+              <div class="activity-value">{{ userRank ? userRank.monthlyActivityScore : 0 }}</div>
+              <div class="activity-label">本月活跃度</div>
+            </div>
+          </el-col>
+        </el-row>
+      </el-card>
     </div>
     
     <div class="recent-activities">
@@ -143,6 +190,7 @@ export default {
       donatedBooks: 0, // 已捐赠书籍数量
       borrowedBooks: 0, // 已借阅书籍数量
       unlockedBadges: 0, // 已解锁勋章数量
+      userRank: null, // 用户排名信息
       recentActivities: [],
       donationRecords: [], // 捐赠记录列表
       borrowRecords: [], // 借阅记录列表
@@ -160,6 +208,7 @@ export default {
     this.getCurrentUser()
     this.fetchUserStats()
     this.fetchRecentActivities()
+    this.fetchUserRank()
   },
   methods: {
     getCurrentUser() {
@@ -175,6 +224,23 @@ export default {
     // 跳转到借阅书籍页面
     goToBorrowedBooks() {
       this.$router.push('/user/borrowed-books')
+    },
+    // 跳转到排行榜页面
+    goToRanking() {
+      this.$router.push('/user/ranking')
+    },
+    // 获取用户排名
+    async fetchUserRank() {
+      try {
+        const res = await this.$axios.get(`/userActivity/userRank/${this.currentUser.id}`, {
+          params: { rankType: 'total' }
+        })
+        if (res.code === 20000 && res.data) {
+          this.userRank = res.data
+        }
+      } catch (error) {
+        console.error('获取用户排名失败:', error)
+      }
     },
     // 获取用户统计数据
     async fetchUserStats() {
@@ -339,6 +405,31 @@ p {
 }
 
 .stat-label {
+  font-size: 14px;
+  color: #909399;
+}
+
+.activity-section {
+  margin-top: 40px;
+}
+
+.activity-card {
+  margin-bottom: 20px;
+}
+
+.activity-item {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.activity-value {
+  font-size: 32px;
+  font-weight: bold;
+  color: #409EFF;
+  margin-bottom: 10px;
+}
+
+.activity-label {
   font-size: 14px;
   color: #909399;
 }

@@ -31,6 +31,17 @@ public interface BookInfoService {
      * @return 分页结果
      */
     Page<BookInfoVO> pageQuery(Integer pageNum, Integer pageSize, String bookName, Integer donorId);
+    
+    /**
+     * 分页查询书籍列表（支持书名、捐赠人 ID 和书籍状态条件）
+     * @param pageNum 页码
+     * @param pageSize 每页大小
+     * @param bookName 书名（可选，模糊查询）
+     * @param donorId 捐赠人 ID（可选）
+     * @param bookStatus 书籍状态（可选）
+     * @return 分页结果
+     */
+    Page<BookInfoVO> pageQuery(Integer pageNum, Integer pageSize, String bookName, Integer donorId, Integer bookStatus);
 
     /**
      * 根据 ID 查询书籍
@@ -45,6 +56,13 @@ public interface BookInfoService {
      * @return 是否成功
      */
     boolean save(BookInfo bookInfo);
+    
+    /**
+     * 保存书籍并返回增加的积分
+     * @param bookInfo 书籍信息
+     * @return 增加的积分
+     */
+    Integer saveWithScore(BookInfo bookInfo);
 
     /**
      * 更新书籍

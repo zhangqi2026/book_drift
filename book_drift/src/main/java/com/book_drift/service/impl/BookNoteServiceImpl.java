@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.book_drift.domain.BookNote;
 import com.book_drift.domain.BookNoteLike;
+import com.book_drift.constant.ActivityConstant;
 import com.book_drift.mapper.BookNoteLikeMapper;
 import com.book_drift.mapper.BookNoteMapper;
 import com.book_drift.service.BookNoteService;
 import com.book_drift.service.SysUserService;
+import com.book_drift.service.UserActivityService;
 import com.book_drift.vo.BookNoteVO;
 import com.book_drift.vo.SysUserVO;
 import org.springframework.beans.BeanUtils;
@@ -35,6 +37,9 @@ public class BookNoteServiceImpl extends ServiceImpl<BookNoteMapper, BookNote> i
 
     @Resource
     private BookNoteLikeMapper bookNoteLikeMapper;
+    
+    @Resource
+    private UserActivityService userActivityService;
 
     @Override
     public Page<BookNoteVO> pageQuery(Integer pageNum, Integer pageSize, Integer bookId) {
@@ -82,10 +87,28 @@ public class BookNoteServiceImpl extends ServiceImpl<BookNoteMapper, BookNote> i
     }
 
     @Override
-    public boolean save(BookNote bookNote) {
+    public Integer saveWithScore(BookNote bookNote) {
         // 设置创建时间为当前时间
         bookNote.setCreateTime(new Date());
-        return super.save(bookNote);
+        boolean result = super.save(bookNote);
+        Integer score = null;
+        
+        // 增加用户活跃度（发布笔记）
+        if (result && bookNote.getUserId() != null) {
+            score = userActivityService.addActivity(
+                bookNote.getUserId(), 
+                ActivityConstant.ACTIVITY_TYPE_PUBLISH_NOTE, 
+                bookNote.getId()
+            );
+        }
+        
+        return score;
+    }
+    
+    @Override
+    public boolean save(BookNote bookNote) {
+        saveWithScore(bookNote);
+        return true;
     }
 
     @Override
@@ -155,16 +178,16 @@ public class BookNoteServiceImpl extends ServiceImpl<BookNoteMapper, BookNote> i
      * @param userId 用户 ID
      * @return 是否成功
      */
-    public boolean likeNoteWithRecord(Integer noteId, Integer userId) {
+    public Integer likeNoteWithRecordWithScore(Integer noteId, Integer userId) {
         // 检查是否已点赞
         if (hasUserLiked(noteId, userId)) {
-            return false; // 已经点过赞了
+            return null; // 已经点过赞了
         }
         
         // 查询笔记
         BookNote bookNote = super.getById(noteId);
         if (bookNote == null) {
-            return false;
+            return null;
         }
         
         // 点赞数 +1
@@ -176,6 +199,7 @@ public class BookNoteServiceImpl extends ServiceImpl<BookNoteMapper, BookNote> i
         
         // 更新笔记
         boolean updateResult = super.updateById(bookNote);
+        Integer score = null;
         
         // 添加点赞记录
         if (updateResult) {
@@ -184,9 +208,29 @@ public class BookNoteServiceImpl extends ServiceImpl<BookNoteMapper, BookNote> i
             like.setUserId(userId);
             like.setCreateTime(new Date());
             bookNoteLikeMapper.insert(like);
+            
+            // 增加笔记作者的活跃度（被点赞）
+            if (bookNote.getUserId() != null) {
+                score = userActivityService.addActivity(
+                    bookNote.getUserId(), 
+                    ActivityConstant.ACTIVITY_TYPE_BE_LIKED, 
+                    noteId
+                );
+            }
         }
         
-        return updateResult;
+        return score;
+    }
+    
+    /**
+     * 用户点赞（带记录）
+     * @param noteId 笔记 ID
+     * @param userId 用户 ID
+     * @return 是否成功
+     */
+    public boolean likeNoteWithRecord(Integer noteId, Integer userId) {
+        Integer score = likeNoteWithRecordWithScore(noteId, userId);
+        return score != null;
     }
 
     @Override
@@ -210,21 +254,21 @@ public class BookNoteServiceImpl extends ServiceImpl<BookNoteMapper, BookNote> i
     }
 
     /**
-     * 用户取消点赞（带记录）
+     * 用户取消点赞（带记录）并返回分数变化
      * @param noteId 笔记 ID
      * @param userId 用户 ID
-     * @return 是否成功
+     * @return 减少的积分（笔记作者的积分）
      */
-    public boolean unlikeNoteWithRecord(Integer noteId, Integer userId) {
+    public Integer unlikeNoteWithRecordWithScore(Integer noteId, Integer userId) {
         // 检查是否已点赞
         if (!hasUserLiked(noteId, userId)) {
-            return false; // 没有点过赞，无法取消
+            return null; // 没有点过赞，无法取消
         }
         
         // 查询笔记
         BookNote bookNote = super.getById(noteId);
         if (bookNote == null) {
-            return false;
+            return null;
         }
         
         // 点赞数 -1，最小为 0
@@ -237,16 +281,34 @@ public class BookNoteServiceImpl extends ServiceImpl<BookNoteMapper, BookNote> i
         
         // 更新笔记
         boolean updateResult = super.updateById(bookNote);
+        Integer score = null;
         
-        // 删除点赞记录
+        // 删除点赞记录并减少活跃度
         if (updateResult) {
             QueryWrapper<BookNoteLike> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("note_id", noteId)
                         .eq("user_id", userId);
             bookNoteLikeMapper.delete(queryWrapper);
+            
+            // 减少笔记作者的活跃度（被点赞）
+            if (bookNote.getUserId() != null) {
+                score = ActivityConstant.SCORE_BE_LIKED;
+                userActivityService.subtractScore(bookNote.getUserId(), score);
+            }
         }
         
-        return updateResult;
+        return score;
+    }
+    
+    /**
+     * 用户取消点赞（带记录）
+     * @param noteId 笔记 ID
+     * @param userId 用户 ID
+     * @return 是否成功
+     */
+    public boolean unlikeNoteWithRecord(Integer noteId, Integer userId) {
+        Integer score = unlikeNoteWithRecordWithScore(noteId, userId);
+        return score != null;
     }
 
     /**

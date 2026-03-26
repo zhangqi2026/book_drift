@@ -62,4 +62,24 @@ public class SysUser implements Serializable {
      * 当前佩戴的勋章 ID（关联 user_medal.id）
      */
     private Integer currentMedalId;
+    
+    /**
+     * 总活跃度分数
+     */
+    private Integer activityScore;
+    
+    /**
+     * 日活跃度分数
+     */
+    private Integer dailyActivityScore;
+    
+    /**
+     * 周活跃度分数
+     */
+    private Integer weeklyActivityScore;
+    
+    /**
+     * 月活跃度分数
+     */
+    private Integer monthlyActivityScore;
 }
