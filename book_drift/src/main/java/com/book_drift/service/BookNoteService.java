@@ -33,6 +33,13 @@ public interface BookNoteService {
      * @return 是否成功
      */
     boolean save(BookNote bookNote);
+    
+    /**
+     * 保存笔记并返回积分信息
+     * @param bookNote 笔记信息
+     * @return 增加的积分
+     */
+    Integer saveWithScore(BookNote bookNote);
 
     /**
      * 更新笔记
@@ -61,6 +68,14 @@ public interface BookNoteService {
      * @return 是否成功
      */
     boolean unlikeNote(Integer id);
+    
+    /**
+     * 用户点赞（带记录）并返回积分信息
+     * @param noteId 笔记 ID
+     * @param userId 用户 ID
+     * @return 增加的积分（笔记作者的积分）
+     */
+    Integer likeNoteWithRecordWithScore(Integer noteId, Integer userId);
 
     /**
      * 分页查询笔记列表（支持书籍 ID 和当前用户 ID 条件）
@@ -95,4 +110,12 @@ public interface BookNoteService {
      * @return 是否成功
      */
     boolean unlikeNoteWithRecord(Integer noteId, Integer userId);
+    
+    /**
+     * 用户取消点赞（带记录）并返回分数变化
+     * @param noteId 笔记 ID
+     * @param userId 用户 ID
+     * @return 减少的积分（笔记作者的积分）
+     */
+    Integer unlikeNoteWithRecordWithScore(Integer noteId, Integer userId);
 }

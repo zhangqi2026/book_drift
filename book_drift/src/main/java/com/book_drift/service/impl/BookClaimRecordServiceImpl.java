@@ -7,10 +7,12 @@ import com.book_drift.domain.BookClaimRecord;
 import com.book_drift.domain.BookInfo;
 import com.book_drift.domain.SysUser;
 import com.book_drift.mapper.BookClaimRecordMapper;
+import com.book_drift.constant.ActivityConstant;
 import com.book_drift.mapper.BookInfoMapper;
 import com.book_drift.service.BookClaimRecordService;
 import com.book_drift.service.BookInfoService;
 import com.book_drift.service.SysUserService;
+import com.book_drift.service.UserActivityService;
 import com.book_drift.vo.BookClaimRecordVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,9 @@ public class BookClaimRecordServiceImpl extends ServiceImpl<BookClaimRecordMappe
     
     @Resource
     private BookInfoMapper bookInfoMapper;
+    
+    @Resource
+    private UserActivityService userActivityService;
 
     @Override
     public Page<BookClaimRecordVO> pageQuery(Integer pageNum, Integer pageSize, Integer userId) {
@@ -106,7 +111,7 @@ public class BookClaimRecordServiceImpl extends ServiceImpl<BookClaimRecordMappe
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean claimBook(Integer bookId, Integer userId) {
+    public Integer claimBookWithScore(Integer bookId, Integer userId) {
         // 1. 检查用户当前借阅数量是否超过 3 本
         Integer currentBorrowed = countCurrentBorrowed(userId);
         if (currentBorrowed >= 3) {
@@ -159,12 +164,35 @@ public class BookClaimRecordServiceImpl extends ServiceImpl<BookClaimRecordMappe
             throw new RuntimeException("更新书籍状态失败");
         }
         
+        // 增加认领人的活跃度（成功归还/认领）
+        Integer score = userActivityService.addActivity(
+            userId, 
+            ActivityConstant.ACTIVITY_TYPE_RETURN_CLAIM, 
+            record.getId()
+        );
+        
+        // 增加捐赠人的活跃度（成功借出）
+        if (bookInfo.getDonorId() != null) {
+            userActivityService.addActivity(
+                bookInfo.getDonorId(), 
+                ActivityConstant.ACTIVITY_TYPE_LEND_BOOK, 
+                record.getId()
+            );
+        }
+        
+        return score;
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean claimBook(Integer bookId, Integer userId) {
+        claimBookWithScore(bookId, userId);
         return true;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean returnBook(Integer recordId) {
+    public Integer returnBookWithScore(Integer recordId) {
         // 1. 查询借书记录
         BookClaimRecord record = super.getById(recordId);
         if (record == null) {
@@ -202,6 +230,20 @@ public class BookClaimRecordServiceImpl extends ServiceImpl<BookClaimRecordMappe
             throw new RuntimeException("更新书籍状态失败");
         }
         
+        // 增加归还人的活跃度（成功归还/认领）
+        Integer score = userActivityService.addActivity(
+            record.getUserId(), 
+            ActivityConstant.ACTIVITY_TYPE_RETURN_CLAIM, 
+            record.getId()
+        );
+        
+        return score;
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean returnBook(Integer recordId) {
+        returnBookWithScore(recordId);
         return true;
     }
 

@@ -85,12 +85,25 @@
           <el-card class="chart-card">
             <div slot="header" class="chart-header">
               <span>用户活跃排行</span>
+              <el-select v-model="rankType" size="mini" style="float: right;" @change="fetchActiveUsers">
+                <el-option label="总榜" value="total"></el-option>
+                <el-option label="日榜" value="daily"></el-option>
+                <el-option label="周榜" value="weekly"></el-option>
+                <el-option label="月榜" value="monthly"></el-option>
+              </el-select>
             </div>
             <el-table :data="activeUsers" style="width: 100%">
-              <el-table-column prop="rank" label="排名" width="80"></el-table-column>
+              <el-table-column prop="rank" label="排名" width="80">
+                <template slot-scope="scope">
+                  <el-tag v-if="scope.row.rank <= 3" :type="getRankTagType(scope.row.rank)" size="mini">
+                    {{ scope.row.rank }}
+                  </el-tag>
+                  <span v-else>{{ scope.row.rank }}</span>
+                </template>
+              </el-table-column>
               <el-table-column prop="name" label="用户名"></el-table-column>
               <el-table-column prop="college" label="学院"></el-table-column>
-              <el-table-column prop="borrowCount" label="借阅次数"></el-table-column>
+              <el-table-column prop="activityScore" label="活跃度分数" width="120"></el-table-column>
             </el-table>
           </el-card>
         </el-col>
@@ -119,6 +132,7 @@ export default {
         totalDonations: 0
       },
       activeUsers: [],
+      rankType: 'total',
       donationChart: null,
       borrowChart: null,
       statusChart: null
@@ -170,17 +184,27 @@ export default {
     },
     async fetchActiveUsers() {
       try {
-        const res = await this.$axios.post('/sysUser/condition/1/10')
-        if (res.code === 20000) {
-          this.activeUsers = res.data.records.map((user, index) => ({
-            rank: index + 1,
+        const res = await this.$axios.post(`/userActivity/rank/10/1`, null, {
+          params: { rankType: this.rankType }
+        })
+        if (res.code === 20000 && res.data && res.data.records) {
+          this.activeUsers = res.data.records.map(user => ({
+            rank: user.rank,
             name: user.name,
             college: user.college,
-            borrowCount: user.borrowCount || 0
-          })).sort((a, b) => b.borrowCount - a.borrowCount)
+            activityScore: user.activityScore || 0
+          }))
         }
       } catch (error) {
         console.error('获取活跃用户失败:', error)
+      }
+    },
+    getRankTagType(rank) {
+      switch (rank) {
+        case 1: return 'danger'
+        case 2: return 'warning'
+        case 3: return 'success'
+        default: return 'info'
       }
     },
     async initCharts() {
@@ -214,7 +238,7 @@ export default {
         grid: {
           left: '3%',
           right: '4%',
-          bottom: '3%',
+          bottom: '10%',
           containLabel: true
         },
         xAxis: {
@@ -251,7 +275,7 @@ export default {
         grid: {
           left: '3%',
           right: '4%',
-          bottom: '3%',
+          bottom: '10%',
           containLabel: true
         },
         xAxis: {
@@ -274,74 +298,100 @@ export default {
       }
       this.borrowChart.setOption(option)
     },
-    initStatusChart() {
-      this.statusChart = echarts.init(this.$refs.statusChart)
-      const option = {
-        tooltip: {
-          trigger: 'item',
-          formatter: '{a} <br/>{b}: {c} ({d}%)'
-        },
-        legend: {
-          orient: 'horizontal',
-          bottom: '5%',
-          left: 'center'
-        },
-        series: [
-          {
-            name: '书籍状态',
-            type: 'pie',
-            radius: '60%',
-            center: ['50%', '40%'],
-            data: [
-              { value: this.stats.totalBooks - (this.stats.totalBooks * 0.3), name: '待认领' },
-              { value: this.stats.totalBooks * 0.2, name: '已认领' },
-              { value: this.stats.totalBooks * 0.1, name: '已归还' }
-            ],
-            emphasis: {
-              itemStyle: {
-                shadowBlur: 10,
-                shadowOffsetX: 0,
-                shadowColor: 'rgba(0, 0, 0, 0.5)'
-              }
-            },
-            label: {
-              formatter: '{b}: {d}%'
-            }
-          }
-        ]
-      }
-      this.statusChart.setOption(option)
-    },
-    async fetchActiveUsers() {
+    async initStatusChart() {
       try {
-        console.log('开始获取活跃用户数据')
-        const res = await this.$axios.post('/sysUser/condition/1/10')
-        console.log('活跃用户数据:', res)
-        if (res.code === 20000 && res.data && res.data.records) {
-          this.activeUsers = res.data.records.map((user, index) => ({
-            rank: index + 1,
-            name: user.name,
-            college: user.college,
-            borrowCount: user.borrowCount || 0
-          })).sort((a, b) => b.borrowCount - a.borrowCount)
-          console.log('处理后的活跃用户数据:', this.activeUsers)
-        } else {
-          console.log('活跃用户数据结构不符合预期:', res)
-          // 使用模拟数据作为兜底
-          this.activeUsers = [
-            { rank: 1, name: '张三', college: '计算机学院', borrowCount: 5 },
-            { rank: 2, name: '李四', college: '文学院', borrowCount: 3 },
-            { rank: 3, name: '王五', college: '数学学院', borrowCount: 2 }
-          ]
+        // 从后端获取真实的书籍状态分布数据
+        const res = await this.$axios.post('/bookInfo/condition/1/1')
+        if (res.code === 20000) {
+          const totalBooks = res.data.total || 0
+          
+          // 构建查询条件获取不同状态的书籍数量
+          const [pendingRes, claimedRes, returnedRes] = await Promise.all([
+            this.$axios.post('/bookInfo/condition/1/1', null, { params: { bookStatus: 1 } }),
+            this.$axios.post('/bookInfo/condition/1/1', null, { params: { bookStatus: 2 } }),
+            this.$axios.post('/bookInfo/condition/1/1', null, { params: { bookStatus: 3 } })
+          ])
+          
+          const pendingCount = pendingRes.code === 20000 ? pendingRes.data.total || 0 : 0
+          const claimedCount = claimedRes.code === 20000 ? claimedRes.data.total || 0 : 0
+          const returnedCount = returnedRes.code === 20000 ? returnedRes.data.total || 0 : 0
+          
+          this.statusChart = echarts.init(this.$refs.statusChart)
+          const option = {
+            tooltip: {
+              trigger: 'item',
+              formatter: '{a} <br/>{b}: {c} ({d}%)'
+            },
+            legend: {
+              orient: 'horizontal',
+              bottom: '10%',
+              left: 'center'
+            },
+            series: [
+              {
+                name: '书籍状态',
+                type: 'pie',
+                radius: '55%',
+                center: ['50%', '45%'],
+                data: [
+                  { value: pendingCount, name: '待认领' },
+                  { value: claimedCount, name: '已认领' },
+                  { value: returnedCount, name: '已归还' }
+                ],
+                emphasis: {
+                  itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                  }
+                },
+                label: {
+                  formatter: '{b}: {d}%'
+                }
+              }
+            ]
+          }
+          this.statusChart.setOption(option)
         }
       } catch (error) {
-        console.error('获取活跃用户失败:', error)
-        // 使用模拟数据作为兜底
-        this.activeUsers = [
-          { rank: 1, name: '张三', college: '计算机学院', borrowCount: 5 },
-          { rank: 2, name: '李四', college: '文学院', borrowCount: 3 },
-          { rank: 3, name: '王五', college: '数学学院', borrowCount: 2 }
-        ]
+        console.error('获取书籍状态分布数据失败:', error)
+        // 失败时使用模拟数据
+        this.statusChart = echarts.init(this.$refs.statusChart)
+        const option = {
+          tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: {c} ({d}%)'
+          },
+          legend: {
+            orient: 'horizontal',
+            bottom: '10%',
+            left: 'center'
+          },
+          series: [
+            {
+              name: '书籍状态',
+              type: 'pie',
+              radius: '55%',
+              center: ['50%', '45%'],
+              data: [
+                { value: this.stats.totalBooks - (this.stats.totalBooks * 0.3), name: '待认领' },
+                { value: this.stats.totalBooks * 0.2, name: '已认领' },
+                { value: this.stats.totalBooks * 0.1, name: '已归还' }
+              ],
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+              },
+              label: {
+                formatter: '{b}: {d}%'
+              }
+            }
+          ]
+        }
+        this.statusChart.setOption(option)
       }
     },
     async collectStatistics() {
@@ -425,7 +475,7 @@ p {
 
 .chart-card {
   margin-bottom: 20px;
-  height: 380px;
+  height: 400px;
 }
 
 .chart-header {
@@ -436,6 +486,6 @@ p {
 
 .chart {
   width: 100%;
-  height: 320px;
+  height: 340px;
 }
 </style>

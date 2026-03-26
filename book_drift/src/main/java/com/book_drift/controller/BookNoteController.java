@@ -75,9 +75,9 @@ public class BookNoteController {
     @PostMapping
     @ApiOperation("新增笔记")
     public BaseResult<Boolean> save(@RequestBody BookNote bookNote) {
-        boolean result = bookNoteService.save(bookNote);
-        if (result) {
-            return BaseResult.ok("新增成功", result);
+        Integer score = bookNoteService.saveWithScore(bookNote);
+        if (score != null) {
+            return BaseResult.ok("新增成功", true).append("score", score);
         }
         return BaseResult.error("新增失败");
     }
@@ -123,9 +123,9 @@ public class BookNoteController {
     public BaseResult<Boolean> likeNote(
             @PathVariable Integer id,
             @RequestParam Integer userId) {
-        boolean result = bookNoteService.likeNoteWithRecord(id, userId);
-        if (result) {
-            return BaseResult.ok("点赞成功", result);
+        Integer score = bookNoteService.likeNoteWithRecordWithScore(id, userId);
+        if (score != null) {
+            return BaseResult.ok("点赞成功", true).append("score", score);
         }
         return BaseResult.error("您已经点过赞了");
     }
@@ -141,9 +141,9 @@ public class BookNoteController {
     public BaseResult<Boolean> unlikeNote(
             @PathVariable Integer id,
             @RequestParam Integer userId) {
-        boolean result = bookNoteService.unlikeNoteWithRecord(id, userId);
-        if (result) {
-            return BaseResult.ok("取消点赞成功", result);
+        Integer score = bookNoteService.unlikeNoteWithRecordWithScore(id, userId);
+        if (score != null) {
+            return BaseResult.ok("取消点赞成功", true).append("score", score);
         }
         return BaseResult.error("取消点赞失败");
     }

@@ -89,6 +89,10 @@ CREATE TABLE `sys_user`  (
   `role` tinyint(4) NOT NULL DEFAULT 2 COMMENT '角色：1-管理员 2-普通用户',
   `borrow_count` int(11) NULL DEFAULT 0 COMMENT '累计借书次数',
   `current_medal_id` int(11) NULL DEFAULT NULL COMMENT '当前佩戴的勋章 ID（关联 user_medal.id）',
+  `activity_score` int(11) NULL DEFAULT 0 COMMENT '总活跃度分数',
+  `daily_activity_score` int(11) NULL DEFAULT 0 COMMENT '日活跃度分数',
+  `weekly_activity_score` int(11) NULL DEFAULT 0 COMMENT '周活跃度分数',
+  `monthly_activity_score` int(11) NULL DEFAULT 0 COMMENT '月活跃度分数',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_student_id`(`student_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '系统用户表' ROW_FORMAT = Compact;
@@ -138,6 +142,22 @@ CREATE TABLE `feedback`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id`(`user_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户反馈表' ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Table structure for user_activity_record
+-- ----------------------------
+DROP TABLE IF EXISTS `user_activity_record`;
+CREATE TABLE `user_activity_record`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `user_id` int(11) NOT NULL COMMENT '用户 ID（关联 sys_user.id）',
+  `activity_type` tinyint(4) NOT NULL COMMENT '活动类型：1-发布书籍 2-成功借出 3-成功归还/认领 4-发布笔记 5-被点赞',
+  `score` int(11) NOT NULL COMMENT '增加的活跃度分数',
+  `business_id` int(11) NULL DEFAULT NULL COMMENT '相关业务 ID（书籍 ID、笔记 ID 等）',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_user_id`(`user_id`) USING BTREE,
+  INDEX `idx_create_time`(`create_time`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户活跃度记录表' ROW_FORMAT = Compact;
 
 -- ----------------------------
 -- Table structure for book_statistics

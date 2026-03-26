@@ -41,9 +41,9 @@ public class BookClaimRecordController {
         
         try {
             // 调用 Service 实现借书业务逻辑
-            boolean result = bookClaimRecordService.claimBook(bookId, userId);
-            if (result) {
-                return BaseResult.ok("借书成功", true);
+            Integer score = bookClaimRecordService.claimBookWithScore(bookId, userId);
+            if (score != null) {
+                return BaseResult.ok("借书成功", true).append("score", score);
             } else {
                 return BaseResult.error("借书失败");
             }
@@ -62,9 +62,9 @@ public class BookClaimRecordController {
     public BaseResult<Boolean> returnBook(@PathVariable Integer recordId) {
         try {
             // 调用 Service 实现还书业务逻辑
-            boolean result = bookClaimRecordService.returnBook(recordId);
-            if (result) {
-                return BaseResult.ok("还书成功", true);
+            Integer score = bookClaimRecordService.returnBookWithScore(recordId);
+            if (score != null) {
+                return BaseResult.ok("还书成功", true).append("score", score);
             } else {
                 return BaseResult.error("还书失败");
             }

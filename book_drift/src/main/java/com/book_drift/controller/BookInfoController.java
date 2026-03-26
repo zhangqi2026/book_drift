@@ -46,9 +46,12 @@ public class BookInfoController {
             @RequestParam(required = false) String bookName,
             
             @ApiParam(value = "捐赠人 ID（可选）", example = "1")
-            @RequestParam(required = false) Integer donorId) {
+            @RequestParam(required = false) Integer donorId,
+            
+            @ApiParam(value = "书籍状态（可选）", example = "1")
+            @RequestParam(required = false) Integer bookStatus) {
 
-        Page<BookInfoVO> page = bookInfoService.pageQuery(current, size, bookName, donorId);
+        Page<BookInfoVO> page = bookInfoService.pageQuery(current, size, bookName, donorId, bookStatus);
         return BaseResult.ok("查询成功", page);
     }
 
@@ -75,9 +78,9 @@ public class BookInfoController {
     @PostMapping
     @ApiOperation("新增书籍")
     public BaseResult<Boolean> save(@RequestBody BookInfo bookInfo) {
-        boolean result = bookInfoService.save(bookInfo);
-        if (result) {
-            return BaseResult.ok("新增成功", result);
+        Integer score = bookInfoService.saveWithScore(bookInfo);
+        if (score != null) {
+            return BaseResult.ok("新增成功", true).append("score", score);
         }
         return BaseResult.error("新增失败");
     }

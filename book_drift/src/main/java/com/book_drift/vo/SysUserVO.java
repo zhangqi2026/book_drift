@@ -36,4 +36,19 @@ public class SysUserVO {
 
     @ApiModelProperty(value = "当前佩戴的勋章 ID", example = "1")
     private Integer currentMedalId;
+    
+    @ApiModelProperty(value = "总活跃度分数", example = "100")
+    private Integer activityScore;
+    
+    @ApiModelProperty(value = "日活跃度分数", example = "20")
+    private Integer dailyActivityScore;
+    
+    @ApiModelProperty(value = "周活跃度分数", example = "50")
+    private Integer weeklyActivityScore;
+    
+    @ApiModelProperty(value = "月活跃度分数", example = "80")
+    private Integer monthlyActivityScore;
+    
+    @ApiModelProperty(value = "排名（仅在排行榜中使用）", example = "1")
+    private Integer rank;
 }

@@ -14,8 +14,10 @@ import com.book_drift.mapper.BookInfoMapper;
 import com.book_drift.mapper.BookNoteLikeMapper;
 import com.book_drift.mapper.BookNoteMapper;
 import com.book_drift.mapper.SysUserMapper;
+import com.book_drift.constant.ActivityConstant;
 import com.book_drift.service.BookInfoService;
 import com.book_drift.service.SysUserService;
+import com.book_drift.service.UserActivityService;
 import com.book_drift.service.UserMedalService;
 import com.book_drift.vo.BookInfoVO;
 import org.apache.commons.lang3.StringUtils;
@@ -48,6 +50,9 @@ public class BookInfoServiceImpl extends ServiceImpl<BookInfoMapper, BookInfo> i
     private UserMedalService userMedalService;
     
     @Resource
+    private UserActivityService userActivityService;
+    
+    @Resource
     private BookClaimRecordMapper bookClaimRecordMapper;
     
     @Resource
@@ -63,6 +68,11 @@ public class BookInfoServiceImpl extends ServiceImpl<BookInfoMapper, BookInfo> i
 
     @Override
     public Page<BookInfoVO> pageQuery(Integer pageNum, Integer pageSize, String bookName, Integer donorId) {
+        return pageQuery(pageNum, pageSize, bookName, donorId, null);
+    }
+    
+    @Override
+    public Page<BookInfoVO> pageQuery(Integer pageNum, Integer pageSize, String bookName, Integer donorId, Integer bookStatus) {
         // 构建查询条件
         QueryWrapper<BookInfo> queryWrapper = new QueryWrapper<>();
         
@@ -74,6 +84,11 @@ public class BookInfoServiceImpl extends ServiceImpl<BookInfoMapper, BookInfo> i
         // 按捐赠人 ID 查询（可选条件）
         if (donorId != null) {
             queryWrapper.eq("donor_id", donorId);
+        }
+        
+        // 按书籍状态查询（可选条件）
+        if (bookStatus != null) {
+            queryWrapper.eq("book_status", bookStatus);
         }
         
         queryWrapper.orderByDesc("id"); // 按 ID 降序排序
@@ -104,8 +119,18 @@ public class BookInfoServiceImpl extends ServiceImpl<BookInfoMapper, BookInfo> i
     }
 
     @Override
-    public boolean save(BookInfo bookInfo) {
+    public Integer saveWithScore(BookInfo bookInfo) {
         boolean result = super.save(bookInfo);
+        Integer score = null;
+        
+        // 增加用户活跃度（发布书籍）
+        if (result && bookInfo.getDonorId() != null) {
+            score = userActivityService.addActivity(
+                bookInfo.getDonorId(), 
+                ActivityConstant.ACTIVITY_TYPE_PUBLISH_BOOK, 
+                bookInfo.getId()
+            );
+        }
         
         // 注意：捐赠勋章不再自动解锁，需要用户在前端手动点击解锁
         // 如果需要在捐赠后检查并解锁勋章，可以取消以下注释
@@ -113,7 +138,13 @@ public class BookInfoServiceImpl extends ServiceImpl<BookInfoMapper, BookInfo> i
         //     checkAndUnlockDonationMedal(bookInfo.getDonorId());
         // }
         
-        return result;
+        return score;
+    }
+    
+    @Override
+    public boolean save(BookInfo bookInfo) {
+        saveWithScore(bookInfo);
+        return true;
     }
 
     @Override
