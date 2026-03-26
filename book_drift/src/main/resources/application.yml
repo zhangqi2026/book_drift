@@ -7,7 +7,7 @@ spring:
     driverClassName: com.mysql.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/book?useUnicode=true&characterEncoding=utf8
     username: root
-    password: 1234
+    password: 123456
 #开启log4j打印SQL语句
 logging:
   level:
