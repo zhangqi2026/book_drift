@@ -4,6 +4,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * <p>
  * 书籍信息 VO 类
@@ -42,4 +44,7 @@ public class BookInfoVO {
 
     @ApiModelProperty(value = "状态：1-待认领 2-已认领 3-已归还")
     private Integer bookStatus;
+
+    @ApiModelProperty(value = "书籍标签列表")
+    private List<BookTagVO> tags;
 }

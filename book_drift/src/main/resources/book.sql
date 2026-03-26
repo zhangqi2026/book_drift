@@ -178,4 +178,31 @@ CREATE TABLE `book_statistics`  (
   UNIQUE INDEX `uk_stat_date`(`stat_date`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '书籍统计数据表' ROW_FORMAT = Compact;
 
+-- ----------------------------
+-- Table structure for book_tag
+-- ----------------------------
+DROP TABLE IF EXISTS `book_tag`;
+CREATE TABLE `book_tag`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `tag_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '标签名称',
+  `tag_desc` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '标签描述',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_tag_name`(`tag_name`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '书籍标签表' ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Table structure for book_tag_relation
+-- ----------------------------
+DROP TABLE IF EXISTS `book_tag_relation`;
+CREATE TABLE `book_tag_relation`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `book_id` int(11) NOT NULL COMMENT '书籍 ID（关联 book_info.id）',
+  `tag_id` int(11) NOT NULL COMMENT '标签 ID（关联 book_tag.id）',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_book_id`(`book_id`) USING BTREE,
+  INDEX `idx_tag_id`(`tag_id`) USING BTREE,
+  UNIQUE INDEX `uk_book_tag`(`book_id`, `tag_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '书籍标签关联表' ROW_FORMAT = Compact;
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -54,6 +54,22 @@
         </template>
       </el-table-column>
       <el-table-column
+        label="标签"
+        min-width="200"
+      >
+        <template slot-scope="scope">
+          <el-tag
+            v-for="tag in scope.row.tags"
+            :key="tag.id"
+            size="small"
+            style="margin-right: 5px; margin-bottom: 5px;"
+          >
+            {{ tag.tagName }}
+          </el-tag>
+          <span v-if="!scope.row.tags || scope.row.tags.length === 0" style="color: #909399;">暂无标签</span>
+        </template>
+      </el-table-column>
+      <el-table-column
         label="状态"
         width="100"
       >
@@ -65,7 +81,7 @@
       </el-table-column>
       <el-table-column
         label="操作"
-        width="380"
+        width="480"
       >
         <template slot-scope="scope">
           <div style="display: flex; gap: 5px; flex-wrap: wrap;">
@@ -82,6 +98,13 @@
               @click="viewBookNotes(scope.row)"
             >
               查看读书笔记
+            </el-button>
+            <el-button
+              type="info"
+              size="mini"
+              @click="bindTags(scope.row)"
+            >
+              绑定标签
             </el-button>
             <el-button
               type="warning"
@@ -313,6 +336,35 @@
         <el-button type="primary" @click="submitNoteForm" :loading="submitting">确 定</el-button>
       </div>
     </el-dialog>
+    
+    <!-- 绑定标签弹窗 -->
+    <el-dialog
+      :title="`为《${currentBindBook?.bookName || ''}》绑定标签`"
+      :visible.sync="bindTagsDialogVisible"
+      width="600px"
+      @close="closeBindTagsDialog"
+    >
+      <div class="tags-select-container">
+        <el-checkbox-group v-model="selectedTagIds">
+          <el-checkbox
+            v-for="tag in allTags"
+            :key="tag.id"
+            :label="tag.id"
+            style="margin: 10px;"
+          >
+            {{ tag.tagName }}
+            <span v-if="tag.description" style="color: #909399; font-size: 12px;">- {{ tag.description }}</span>
+          </el-checkbox>
+        </el-checkbox-group>
+        <div v-if="allTags.length === 0" style="text-align: center; padding: 40px; color: #909399;">
+          暂无可用标签，请先在标签管理中创建标签
+        </div>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="bindTagsDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitBindTags" :loading="bindingTags">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -370,11 +422,18 @@ export default {
         ]
       },
       noteFormRef: null,
-      submitting: false
+      submitting: false,
+      // 标签绑定相关
+      bindTagsDialogVisible: false,
+      currentBindBook: null,
+      allTags: [],
+      selectedTagIds: [],
+      bindingTags: false
     }
   },
   mounted() {
     this.fetchBookList()
+    this.fetchAllTags()
   },
   methods: {
     async fetchBookList() {
@@ -658,6 +717,53 @@ export default {
       const seconds = String(date.getSeconds()).padStart(2, '0')
       
       return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    },
+    // 获取所有标签
+    async fetchAllTags() {
+      try {
+        const response = await this.$axios.post('/bookTag/listAll')
+        if (response.code === 20000) {
+          this.allTags = response.data || []
+        }
+      } catch (error) {
+        console.error('获取标签列表失败：', error)
+      }
+    },
+    // 绑定标签
+    bindTags(book) {
+      this.currentBindBook = book
+      this.selectedTagIds = book.tags ? book.tags.map(t => t.id) : []
+      this.bindTagsDialogVisible = true
+    },
+    // 提交标签绑定
+    async submitBindTags() {
+      this.bindingTags = true
+      try {
+        const response = await this.$axios.post('/bookTag/bindBookTags', null, {
+          params: {
+            bookId: this.currentBindBook.id,
+            tagIds: this.selectedTagIds.join(',')
+          }
+        })
+        
+        if (response.code === 20000) {
+          this.$message.success('标签绑定成功')
+          this.bindTagsDialogVisible = false
+          this.fetchBookList()
+        } else {
+          this.$message.error(response.message || '标签绑定失败')
+        }
+      } catch (error) {
+        this.$message.error('标签绑定失败：' + (error.response?.data?.message || error.message))
+      } finally {
+        this.bindingTags = false
+      }
+    },
+    // 关闭标签绑定弹窗
+    closeBindTagsDialog() {
+      this.bindTagsDialogVisible = false
+      this.currentBindBook = null
+      this.selectedTagIds = []
     }
   }
 }

@@ -11,6 +11,8 @@ import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>
@@ -52,6 +54,42 @@ public class BookInfoController {
             @RequestParam(required = false) Integer bookStatus) {
 
         Page<BookInfoVO> page = bookInfoService.pageQuery(current, size, bookName, donorId, bookStatus);
+        return BaseResult.ok("查询成功", page);
+    }
+
+    /**
+     * 分页查询书籍列表（支持标签筛选）- POST 方式
+     * @param size 每页大小
+     * @param current 当前页码
+     * @param bookName 书名（可选，模糊查询）
+     * @param tagIds 标签 ID 列表（可选，逗号分隔）
+     * @return 分页结果
+     */
+    @PostMapping("/conditionWithTags/{size}/{current}")
+    @ApiOperation("分页查询书籍列表（支持标签筛选）")
+    public BaseResult<Page<BookInfoVO>> pageQueryWithTags(
+            @ApiParam(value = "每页大小", required = true, example = "10")
+            @PathVariable("size") int size,
+
+            @ApiParam(value = "当前页码", required = true, example = "1")
+            @PathVariable("current") int current,
+
+            @ApiParam(value = "书名（可选，模糊查询）", example = "Java")
+            @RequestParam(required = false) String bookName,
+            
+            @ApiParam(value = "标签 ID 列表（可选，逗号分隔）", example = "1,2")
+            @RequestParam(required = false) String tagIds) {
+        
+        List<Integer> tagIdList = null;
+        if (tagIds != null && !tagIds.isEmpty()) {
+            tagIdList = new ArrayList<>();
+            String[] ids = tagIds.split(",");
+            for (String id : ids) {
+                tagIdList.add(Integer.parseInt(id.trim()));
+            }
+        }
+
+        Page<BookInfoVO> page = bookInfoService.pageQueryWithTags(current, size, bookName, tagIdList);
         return BaseResult.ok("查询成功", page);
     }
 
