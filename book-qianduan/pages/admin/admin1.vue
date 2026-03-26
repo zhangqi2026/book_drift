@@ -46,6 +46,14 @@
           <i class="el-icon-message"></i>
           <span>反馈管理</span>
         </div>
+        <div 
+          class="menu-item" 
+          :class="{ 'active': activeTab === 'tags' }"
+          @click="switchTab('tags')"
+        >
+          <i class="el-icon-price-tag"></i>
+          <span>标签管理</span>
+        </div>
       </div>
       <div class="navbar-user">
         <div class="user-info">
@@ -75,6 +83,9 @@
       
       <!-- 反馈管理 -->
       <admin-feedback v-if="activeTab === 'feedback'" />
+      
+      <!-- 标签管理 -->
+      <admin-tags v-if="activeTab === 'tags'" />
     </div>
   </div>
 </template>
@@ -85,6 +96,7 @@ import AdminBooks from '@/components/admin/AdminBooks'
 import AdminUsers from '@/components/admin/AdminUsers'
 import AdminMedals from '@/components/admin/AdminMedals'
 import AdminFeedback from '@/components/admin/AdminFeedback'
+import AdminTags from '@/components/admin/AdminTags'
 
 export default {
   components: {
@@ -92,7 +104,8 @@ export default {
     AdminBooks,
     AdminUsers,
     AdminMedals,
-    AdminFeedback
+    AdminFeedback,
+    AdminTags
   },
   data() {
     return {

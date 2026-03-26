@@ -3,19 +3,41 @@
     <!-- 页面标题 -->
     <h2>校园闲置书籍漂流管理系统</h2>
 
-    <!-- 搜索栏 + 分页控制区 -->
+    <!-- 搜索栏 + 标签筛选 + 分页控制区 -->
     <div class="search-pagination-bar">
-      <!-- 书籍搜索 -->
-      <div class="search-box">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="请输入书籍名称搜索"
-          class="search-input"
-          style="width: 250px"
-          @keyup.enter.native="searchBook"
-        />
-        <el-button type="primary" @click="searchBook" class="search-btn">搜索</el-button>
-        <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+      <!-- 书籍搜索和标签筛选 -->
+      <div class="search-tags-box">
+        <div class="search-box">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入书籍名称搜索"
+            class="search-input"
+            style="width: 250px"
+            @keyup.enter.native="searchBook"
+          />
+          <el-button type="primary" @click="searchBook" class="search-btn">搜索</el-button>
+          <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+        </div>
+        <div class="tags-filter-box">
+          <span class="tags-label">标签筛选：</span>
+          <el-select
+            v-model="selectedTagIds"
+            multiple
+            placeholder="选择标签筛选"
+            style="width: 300px;"
+            @change="handleTagFilterChange"
+          >
+            <el-option
+              v-for="tag in allTags"
+              :key="tag.id"
+              :label="tag.tagName"
+              :value="tag.id"
+            >
+              <span>{{ tag.tagName }}</span>
+              <span v-if="tag.description" style="color: #909399; font-size: 12px; margin-left: 8px;">- {{ tag.description }}</span>
+            </el-option>
+          </el-select>
+        </div>
       </div>
 
       <!-- 分页控制 -->
@@ -23,113 +45,87 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page="currentPage"
-        :page-sizes="[3, 5, 10]"
+        :page-sizes="[4, 8, 12]"
         :page-size="pageSize"
         layout="total, sizes, prev, pager, next, jumper"
-        :total="filteredBookList.length"
+        :total="total"
         class="pagination-box"
       >
       </el-pagination>
     </div>
 
-    <!-- 漂流书籍列表表格 -->
-    <el-table
-      :data="paginatedBookList"
-      border
-      stripe
-      class="book-list-table"
-      :empty-text="`暂无符合条件的书籍`"
-      v-loading="loading"
-    >
-      <!-- 表格列定义 -->
-      <el-table-column
-        label="编号"
-        width="80"
-      >
-        <template slot-scope="scope">
-          {{ scope.$index + 1 + (currentPage - 1) * pageSize }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="book_name"
-        label="书籍名称"
-        min-width="180"
-      />
-      <el-table-column
-        prop="author"
-        label="作者"
-        width="120"
-      />
-      <el-table-column
-        prop="donor_name"
-        label="捐赠人"
-        width="100"
-      >
-        <template slot-scope="scope">
-          {{ scope.row.donor_name || '匿名捐赠者' }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="漂流次数/操作"
-        min-width="200"
-      >
-        <template slot-scope="scope">
-          <span class="drift-count">{{ scope.row.claim_count || scope.row.claimCount || 0 }}</span>
-          <el-button
-            type="primary"
-            size="mini"
-            @click.prevent="addDriftCount(scope.row.id)"
-            :disabled="scope.row.book_status !== 1"
-            class="oper-btn"
-          >
-            认领
-          </el-button>
-          <el-button
-            type="success"
-            size="mini"
-            @click.prevent="viewClaimRecords(scope.row)"
-            :disabled="!scope.row.has_records"
-            class="record-btn"
-          >
-            认领记录
-          </el-button>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="书籍状态"
-        width="100"
-      >
-        <template slot-scope="scope">
-          <el-tag :type="getStatusTagType(scope.row.book_status)">
-            {{ getStatusText(scope.row.book_status) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="操作"
-        width="180"
-      >
-        <template slot-scope="scope">
-          <el-button
-            type="info"
-            size="mini"
-            @click.native.prevent="viewBookTrail(scope.row, $event)"
-            @click.prevent="viewBookTrail(scope.row, $event)"
-            class="trail-btn"
-          >
-            查看轨迹
-          </el-button>
-          <el-button
-            type="danger"
-            size="mini"
-            @click="changeBookStatus(scope.row.id, scope.row.book_status)"
-            class="status-btn"
-          >
-            {{ scope.row.book_status === 1 ? '下架' : (scope.row.book_status === 2 ? '归还' : '上架') }}
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <!-- 漂流书籍卡片列表 -->
+    <div class="book-card-list" v-loading="loading">
+      <el-row :gutter="20">
+        <el-col 
+          :xs="24" 
+          :sm="12" 
+          :md="8" 
+          :lg="6" 
+          v-for="(book, index) in paginatedBookList" 
+          :key="book.id"
+        >
+          <el-card class="book-card" shadow="hover">
+            <div class="book-cover">
+              <i class="el-icon-notebook-2"></i>
+            </div>
+            <div class="book-info">
+              <h3 class="book-title">{{ book.bookName || book.book_name }}</h3>
+              <div class="book-tags">
+                <el-tag
+                  v-for="tag in book.tags"
+                  :key="tag.id"
+                  size="mini"
+                  style="margin-right: 4px; margin-bottom: 4px;"
+                >
+                  {{ tag.tagName }}
+                </el-tag>
+              </div>
+              <p class="book-author">作者：{{ book.author }}</p>
+              <p class="book-donor">捐赠人：{{ book.donorName || book.donor_name || '匿名捐赠者' }}</p>
+              <div class="book-meta">
+                <span class="drift-count">漂流 {{ book.claimCount || book.claim_count || 0 }} 次</span>
+                <el-tag :type="getStatusTagType(book.bookStatus || book.book_status)" size="small">
+                  {{ getStatusText(book.bookStatus || book.book_status) }}
+                </el-tag>
+              </div>
+              <div class="book-actions">
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="addDriftCount(book.id)"
+                  :disabled="(book.bookStatus || book.book_status) !== 1"
+                >
+                  认领
+                </el-button>
+                <el-button
+                  type="success"
+                  size="small"
+                  @click="viewClaimRecords(book)"
+                >
+                  认领记录
+                </el-button>
+                <el-button
+                  type="info"
+                  size="small"
+                  @click="viewBookTrail(book, $event)"
+                >
+                  查看轨迹
+                </el-button>
+                <el-button
+                  type="danger"
+                  size="small"
+                  @click="changeBookStatus(book.id, book.bookStatus || book.book_status)"
+                >
+                  {{ (book.bookStatus || book.book_status) === 1 ? '下架' : ((book.bookStatus || book.book_status) === 2 ? '归还' : '上架') }}
+                </el-button>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+      <div v-if="paginatedBookList.length === 0" class="empty-data">暂无符合条件的书籍</div>
+    </div>
 
     <!-- 总漂流次数统计 -->
     <div class="total-row" v-if="filteredBookList.length > 0">
@@ -239,7 +235,10 @@ export default {
         name: '',
         college: '',
         role: 2
-      }
+      },
+      // 标签相关
+      allTags: [],
+      selectedTagIds: []
     }
   },
   computed: {
@@ -247,25 +246,15 @@ export default {
     totalDriftCount() {
       return this.driftBookList.reduce((sum, book) => sum + (book.claimCount || 0), 0)
     },
-    // 过滤后的书籍列表（根据搜索关键词）
-    filteredBookList() {
-      if (!this.searchKeyword) {
-        return this.driftBookList
-      }
-      return this.driftBookList.filter(book => 
-        book.bookName && book.bookName.toLowerCase().includes(this.searchKeyword.toLowerCase())
-      )
-    },
-    // 分页后的书籍列表
+    // 分页后的书籍列表（直接使用后端返回的分页数据）
     paginatedBookList() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return this.filteredBookList.slice(start, end)
+      return this.driftBookList
     }
   },
   mounted() {
     this.checkLoginStatus()
     this.initApp()
+    this.fetchAllTags()
   },
   methods: {
     // 检查登录状态
@@ -538,14 +527,34 @@ export default {
         console.error('更新用户统计失败:', error)
       }
     },
-    // 获取书籍列表
+    // 获取所有标签
+    async fetchAllTags() {
+      try {
+        const response = await this.$axios.post('/bookTag/listAll')
+        if (response.code === 20000) {
+          this.allTags = response.data || []
+        }
+      } catch (error) {
+        console.error('获取标签列表失败：', error)
+      }
+    },
+    // 标签筛选变化
+    handleTagFilterChange() {
+      this.currentPage = 1
+      this.fetchBookList()
+    },
+    // 获取书籍列表（支持标签筛选）
     async fetchBookList() {
       try {
         this.loading = true
-        const response = await this.$axios.post(`/bookInfo/condition/${this.pageSize}/${this.currentPage}`, null, {
-          params: {
-            bookName: this.searchKeyword
-          }
+        const params = {
+          bookName: this.searchKeyword
+        }
+        if (this.selectedTagIds && this.selectedTagIds.length > 0) {
+          params.tagIds = this.selectedTagIds.join(',')
+        }
+        const response = await this.$axios.post(`/bookInfo/conditionWithTags/${this.pageSize}/${this.currentPage}`, null, {
+          params
         })
         
         if (response.code === 20000) {
@@ -568,6 +577,7 @@ export default {
     // 重置搜索
     resetSearch() {
       this.searchKeyword = ''
+      this.selectedTagIds = []
       this.currentPage = 1
       this.fetchBookList()
     },
@@ -597,11 +607,19 @@ export default {
 .search-pagination-bar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  padding: 10px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding: 15px;
   background-color: #f8f9fa;
-  border-radius: 5px;
+  border-radius: 8px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.search-tags-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .search-box {
@@ -610,35 +628,114 @@ export default {
   gap: 10px;
 }
 
-/* 漂流次数显示 */
-.drift-count {
-  display: inline-block;
-  width: 30px;
-  margin: 0 5px;
+.tags-filter-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tags-label {
+  font-size: 14px;
+  color: #606266;
+  white-space: nowrap;
+}
+
+.book-tags {
+  margin: 10px 0;
+  min-height: 24px;
+}
+
+/* 书籍卡片列表 */
+.book-card-list {
+  margin-bottom: 20px;
+}
+
+.book-card {
+  margin-bottom: 20px;
+  transition: all 0.3s;
+}
+
+.book-card:hover {
+  transform: translateY(-5px);
+}
+
+.book-cover {
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px 4px 0 0;
+  margin: -20px -20px 15px -20px;
+}
+
+.book-cover i {
+  font-size: 48px;
+  color: white;
+}
+
+.book-info {
   text-align: center;
+}
+
+.book-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+  margin: 0 0 10px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-author,
+.book-donor {
+  font-size: 13px;
+  color: #909399;
+  margin: 5px 0;
+}
+
+.book-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.drift-count {
+  font-size: 13px;
+  color: #606266;
+}
+
+.book-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 15px;
 }
 
 /* 总漂流次数 */
 .total-row {
-  margin: 10px 0;
+  margin: 10px 0 20px 0;
   text-align: right;
 }
 
 /* 捐赠表单容器 */
 .donate-form-container {
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
 .donate-form {
   padding: 10px 0;
 }
 
-/* 按钮样式 */
-.trail-btn {
-  margin-right: 5px;
-}
-
-.status-btn {
-  margin-left: 5px;
+.empty-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #909399;
+  font-size: 16px;
 }
 </style>

@@ -16,10 +16,12 @@ import com.book_drift.mapper.BookNoteMapper;
 import com.book_drift.mapper.SysUserMapper;
 import com.book_drift.constant.ActivityConstant;
 import com.book_drift.service.BookInfoService;
+import com.book_drift.service.BookTagService;
 import com.book_drift.service.SysUserService;
 import com.book_drift.service.UserActivityService;
 import com.book_drift.service.UserMedalService;
 import com.book_drift.vo.BookInfoVO;
+import com.book_drift.vo.BookTagVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -27,8 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -61,9 +65,72 @@ public class BookInfoServiceImpl extends ServiceImpl<BookInfoMapper, BookInfo> i
     @Resource
     private BookNoteLikeMapper bookNoteLikeMapper;
 
+    @Resource
+    private BookTagService bookTagService;
+
     @Override
     public Page<BookInfoVO> pageQuery(Integer pageNum, Integer pageSize, String bookName) {
         return pageQuery(pageNum, pageSize, bookName, null);
+    }
+
+    @Override
+    public Page<BookInfoVO> pageQueryWithTags(Integer pageNum, Integer pageSize, String bookName, List<Integer> tagIds) {
+        // 构建查询条件
+        QueryWrapper<BookInfo> queryWrapper = new QueryWrapper<>();
+        
+        // 书名模糊查询（可选条件）
+        if (StringUtils.isNotBlank(bookName)) {
+            queryWrapper.like("book_name", bookName);
+        }
+        
+        queryWrapper.orderByDesc("id"); // 按 ID 降序排序
+        
+        // 如果有标签筛选，先获取符合标签的书籍 ID
+        List<Integer> filteredBookIds = null;
+        if (tagIds != null && !tagIds.isEmpty()) {
+            Page<Integer> bookIdsPage = bookTagService.getBookIdsByTags(tagIds, 1, 10000);
+            filteredBookIds = bookIdsPage.getRecords();
+            
+            if (filteredBookIds.isEmpty()) {
+                // 没有符合标签的书籍，返回空结果
+                Page<BookInfoVO> emptyPage = new Page<>(pageNum, pageSize, 0);
+                emptyPage.setRecords(new ArrayList<>());
+                return emptyPage;
+            }
+            
+            queryWrapper.in("id", filteredBookIds);
+        }
+        
+        // 执行分页查询
+        Page<BookInfo> page = new Page<>(pageNum, pageSize);
+        Page<BookInfo> bookPage = this.getBaseMapper().selectPage(page, queryWrapper);
+        
+        // 获取所有书籍 ID，批量查询标签
+        List<Integer> bookIds = bookPage.getRecords().stream()
+                .map(BookInfo::getId)
+                .collect(Collectors.toList());
+        
+        // 批量查询每本书的标签
+        Map<Integer, List<BookTagVO>> bookTagsMap = bookIds.stream()
+                .collect(Collectors.toMap(
+                    bookId -> bookId,
+                    bookId -> bookTagService.getBookTags(bookId)
+                ));
+        
+        // 将 BookInfo 转换为 BookInfoVO，并填充捐赠人信息和标签
+        List<BookInfoVO> voList = bookPage.getRecords().stream()
+                .map(book -> {
+                    BookInfoVO vo = convertToVOWithDonor(book);
+                    vo.setTags(bookTagsMap.get(book.getId()));
+                    return vo;
+                })
+                .collect(Collectors.toList());
+        
+        // 创建返回的分页对象
+        Page<BookInfoVO> voPage = new Page<>(bookPage.getCurrent(), bookPage.getSize(), bookPage.getTotal());
+        voPage.setRecords(voList);
+        
+        return voPage;
     }
 
     @Override
@@ -97,9 +164,25 @@ public class BookInfoServiceImpl extends ServiceImpl<BookInfoMapper, BookInfo> i
         Page<BookInfo> page = new Page<>(pageNum, pageSize);
         Page<BookInfo> bookPage = this.getBaseMapper().selectPage(page, queryWrapper);
         
-        // 将 BookInfo 转换为 BookInfoVO，并填充捐赠人信息
+        // 获取所有书籍 ID，批量查询标签
+        List<Integer> bookIds = bookPage.getRecords().stream()
+                .map(BookInfo::getId)
+                .collect(Collectors.toList());
+        
+        // 批量查询每本书的标签
+        Map<Integer, List<BookTagVO>> bookTagsMap = bookIds.stream()
+                .collect(Collectors.toMap(
+                    bookId -> bookId,
+                    bookId -> bookTagService.getBookTags(bookId)
+                ));
+        
+        // 将 BookInfo 转换为 BookInfoVO，并填充捐赠人信息和标签
         List<BookInfoVO> voList = bookPage.getRecords().stream()
-                .map(this::convertToVOWithDonor)
+                .map(book -> {
+                    BookInfoVO vo = convertToVOWithDonor(book);
+                    vo.setTags(bookTagsMap.get(book.getId()));
+                    return vo;
+                })
                 .collect(Collectors.toList());
         
         // 创建返回的分页对象

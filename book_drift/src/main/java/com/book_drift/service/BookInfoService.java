@@ -5,6 +5,7 @@ import com.book_drift.domain.BookInfo;
 import com.book_drift.vo.BookInfoVO;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * <p>
@@ -42,6 +43,16 @@ public interface BookInfoService {
      * @return 分页结果
      */
     Page<BookInfoVO> pageQuery(Integer pageNum, Integer pageSize, String bookName, Integer donorId, Integer bookStatus);
+
+    /**
+     * 分页查询书籍列表（支持标签筛选）
+     * @param pageNum 页码
+     * @param pageSize 每页大小
+     * @param bookName 书名（可选，模糊查询）
+     * @param tagIds 标签 ID 列表（可选）
+     * @return 分页结果
+     */
+    Page<BookInfoVO> pageQueryWithTags(Integer pageNum, Integer pageSize, String bookName, List<Integer> tagIds);
 
     /**
      * 根据 ID 查询书籍
