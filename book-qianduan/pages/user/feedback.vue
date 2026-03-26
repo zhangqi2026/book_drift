@@ -25,23 +25,75 @@
     
     <div class="feedback-history">
       <h2>我的反馈历史</h2>
-      <el-table :data="feedbackList" stripe>
-        <el-table-column prop="content" label="反馈内容" />
-        <el-table-column prop="status" label="状态" width="120">
-          <template slot-scope="scope">
-            <el-tag :type="getStatusType(scope.row.status)">
-              {{ getStatusText(scope.row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="提交时间" width="200">
-          <template slot-scope="scope">
-            {{ formatDateTime(scope.row.createTime) }}
-          </template>
-        </el-table-column>
-      </el-table>
-      <div v-if="feedbackList.length === 0" class="empty-data">暂无反馈记录</div>
+      <el-card>
+        <div slot="header" class="card-header">
+          <span>反馈记录</span>
+          <el-pagination
+            @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-size="pageSize"
+            layout="total, prev, pager, next, jumper"
+            :total="total"
+          >
+          </el-pagination>
+        </div>
+        <el-table :data="feedbackList" stripe v-loading="loading">
+          <el-table-column label="编号" width="80" align="center">
+            <template slot-scope="scope">
+              {{ (currentPage - 1) * pageSize + scope.$index + 1 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="反馈内容" min-width="120">
+            <template slot-scope="scope">
+              <el-button type="primary" size="small" @click="viewContent(scope.row)">查看内容</el-button>
+            </template>
+          </el-table-column>
+          <el-table-column label="回复" min-width="120">
+            <template slot-scope="scope">
+              <el-button v-if="scope.row.reply" type="success" size="small" @click="viewContent(scope.row)">查看回复</el-button>
+              <el-tag v-else type="info" size="small">未回复</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="status" label="状态" width="120">
+            <template slot-scope="scope">
+              <el-tag :type="getStatusType(scope.row.status)">
+                {{ getStatusText(scope.row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="提交时间" width="180">
+            <template slot-scope="scope">
+              {{ formatDateTime(scope.row.createTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="回复时间" width="180">
+            <template slot-scope="scope">
+              {{ scope.row.replyTime ? formatDateTime(scope.row.replyTime) : '-' }}
+            </template>
+          </el-table-column>
+        </el-table>
+        <div v-if="feedbackList.length === 0 && !loading" class="empty-data">暂无反馈记录</div>
+      </el-card>
     </div>
+
+    <el-dialog title="反馈内容详情" :visible.sync="contentDialogVisible" width="50%">
+      <div class="feedback-content">
+        <p><strong>提交时间：</strong>{{ formatDateTime(currentFeedback.createTime) }}</p>
+        <p><strong>状态：</strong><el-tag :type="getStatusType(currentFeedback.status)">{{ getStatusText(currentFeedback.status) }}</el-tag></p>
+        <el-divider></el-divider>
+        <p><strong>反馈内容：</strong></p>
+        <div class="content-text">{{ currentFeedback.content }}</div>
+        <div v-if="currentFeedback.reply">
+          <el-divider></el-divider>
+          <p><strong>管理员回复：</strong></p>
+          <div class="content-text reply-text">{{ currentFeedback.reply }}</div>
+          <p style="margin-top: 10px; color: #909399; font-size: 12px;">回复时间：{{ formatDateTime(currentFeedback.replyTime) }}</p>
+        </div>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="contentDialogVisible = false">关闭</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -58,7 +110,14 @@ export default {
           { min: 5, message: '反馈内容至少5个字符', trigger: 'blur' }
         ]
       },
-      feedbackList: []
+      feedbackList: [],
+      currentUser: {},
+      contentDialogVisible: false,
+      currentFeedback: {},
+      currentPage: 1,
+      pageSize: 10,
+      total: 0,
+      loading: false
     }
   },
   mounted() {
@@ -73,6 +132,10 @@ export default {
       } else {
         this.$router.push('/login')
       }
+    },
+    viewContent(feedback) {
+      this.currentFeedback = feedback
+      this.contentDialogVisible = true
     },
     submitFeedback() {
       this.$refs.feedbackForm.validate(async (valid) => {
@@ -103,14 +166,19 @@ export default {
     fetchFeedbackHistory() {
       if (!this.currentUser) return
       
-      this.$axios.post(`/feedback/user/${this.currentUser.id}`)
+      this.loading = true
+      this.$axios.post(`/feedback/user/page/${this.currentUser.id}/${this.pageSize}/${this.currentPage}`)
         .then(response => {
           if (response.code === 20000) {
-            this.feedbackList = response.data
+            this.feedbackList = response.data.records || []
+            this.total = response.data.total || 0
           }
         })
         .catch(error => {
           console.error('获取反馈历史失败:', error)
+        })
+        .finally(() => {
+          this.loading = false
         })
     },
     getStatusType(status) {
@@ -141,6 +209,10 @@ export default {
       const minutes = String(date.getMinutes()).padStart(2, '0')
       
       return `${year}-${month}-${day} ${hours}:${minutes}`
+    },
+    handleCurrentChange(val) {
+      this.currentPage = val
+      this.fetchFeedbackHistory()
     }
   }
 }
@@ -176,9 +248,39 @@ p {
   border-bottom: 1px solid #ebeef5;
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .empty-data {
   text-align: center;
   color: #909399;
   padding: 20px;
+}
+
+.feedback-content {
+  padding: 10px;
+}
+
+.feedback-content p {
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+.content-text {
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  margin-top: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.8;
+}
+
+.reply-text {
+  background-color: #e6f7ff;
+  border-left: 4px solid #1890ff;
 }
 </style>

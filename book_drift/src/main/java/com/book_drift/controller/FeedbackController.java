@@ -52,6 +52,32 @@ public class FeedbackController {
         return BaseResult.ok("状态更新成功");
     }
     
+    // 回复反馈
+    @PostMapping("/reply")
+    public BaseResult replyFeedback(@RequestBody FeedbackReplyRequest request) {
+        feedbackService.replyFeedback(request.getId(), request.getReply());
+        return BaseResult.ok("回复成功");
+    }
+    
+    // 分页获取用户的反馈列表
+    @PostMapping("/user/page/{userId}/{size}/{current}")
+    public BaseResult<Page<FeedbackVO>> getUserFeedbacksPage(
+            @PathVariable Long userId,
+            @PathVariable int size,
+            @PathVariable int current) {
+        Page<FeedbackVO> page = feedbackService.pageQueryByUserId(userId, current, size);
+        return BaseResult.ok("获取反馈列表成功", page);
+    }
+
+    // 分页获取所有反馈（管理员用）
+    @PostMapping("/all/page/{size}/{current}")
+    public BaseResult<Page<FeedbackVO>> getAllFeedbacksPage(
+            @PathVariable int size,
+            @PathVariable int current) {
+        Page<FeedbackVO> page = feedbackService.pageQueryAll(current, size);
+        return BaseResult.ok("获取反馈列表成功", page);
+    }
+    
     // 内部类，用于接收状态更新请求
     static class FeedbackStatusUpdateRequest {
         private Long id;
@@ -71,6 +97,28 @@ public class FeedbackController {
         
         public void setStatus(String status) {
             this.status = status;
+        }
+    }
+    
+    // 内部类，用于接收回复请求
+    static class FeedbackReplyRequest {
+        private Long id;
+        private String reply;
+        
+        public Long getId() {
+            return id;
+        }
+        
+        public void setId(Long id) {
+            this.id = id;
+        }
+        
+        public String getReply() {
+            return reply;
+        }
+        
+        public void setReply(String reply) {
+            this.reply = reply;
         }
     }
 }

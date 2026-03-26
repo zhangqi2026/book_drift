@@ -20,6 +20,8 @@ public class Feedback implements Serializable {
     
     private String content;
     
+    private String reply;
+    
     private String status; // PENDING, PROCESSED, CLOSED
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -27,4 +29,7 @@ public class Feedback implements Serializable {
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateTime;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date replyTime;
 }
