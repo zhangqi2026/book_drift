@@ -278,20 +278,17 @@ export default {
       this.statusChart = echarts.init(this.$refs.statusChart)
       const option = {
         tooltip: {
-          trigger: 'item',
-          formatter: '{a} <br/>{b}: {c} ({d}%)'
+          trigger: 'item'
         },
         legend: {
-          orient: 'horizontal',
-          bottom: '5%',
-          left: 'center'
+          orient: 'vertical',
+          left: 'left'
         },
         series: [
           {
             name: '书籍状态',
             type: 'pie',
             radius: '60%',
-            center: ['50%', '40%'],
             data: [
               { value: this.stats.totalBooks - (this.stats.totalBooks * 0.3), name: '待认领' },
               { value: this.stats.totalBooks * 0.2, name: '已认领' },
@@ -303,46 +300,11 @@ export default {
                 shadowOffsetX: 0,
                 shadowColor: 'rgba(0, 0, 0, 0.5)'
               }
-            },
-            label: {
-              formatter: '{b}: {d}%'
             }
           }
         ]
       }
       this.statusChart.setOption(option)
-    },
-    async fetchActiveUsers() {
-      try {
-        console.log('开始获取活跃用户数据')
-        const res = await this.$axios.post('/sysUser/condition/1/10')
-        console.log('活跃用户数据:', res)
-        if (res.code === 20000 && res.data && res.data.records) {
-          this.activeUsers = res.data.records.map((user, index) => ({
-            rank: index + 1,
-            name: user.name,
-            college: user.college,
-            borrowCount: user.borrowCount || 0
-          })).sort((a, b) => b.borrowCount - a.borrowCount)
-          console.log('处理后的活跃用户数据:', this.activeUsers)
-        } else {
-          console.log('活跃用户数据结构不符合预期:', res)
-          // 使用模拟数据作为兜底
-          this.activeUsers = [
-            { rank: 1, name: '张三', college: '计算机学院', borrowCount: 5 },
-            { rank: 2, name: '李四', college: '文学院', borrowCount: 3 },
-            { rank: 3, name: '王五', college: '数学学院', borrowCount: 2 }
-          ]
-        }
-      } catch (error) {
-        console.error('获取活跃用户失败:', error)
-        // 使用模拟数据作为兜底
-        this.activeUsers = [
-          { rank: 1, name: '张三', college: '计算机学院', borrowCount: 5 },
-          { rank: 2, name: '李四', college: '文学院', borrowCount: 3 },
-          { rank: 3, name: '王五', college: '数学学院', borrowCount: 2 }
-        ]
-      }
     },
     async collectStatistics() {
       try {
@@ -425,17 +387,16 @@ p {
 
 .chart-card {
   margin-bottom: 20px;
-  height: 380px;
+  height: 350px;
 }
 
 .chart-header {
   font-size: 16px;
   font-weight: bold;
-  margin-bottom: 10px;
 }
 
 .chart {
   width: 100%;
-  height: 320px;
+  height: 300px;
 }
 </style>
