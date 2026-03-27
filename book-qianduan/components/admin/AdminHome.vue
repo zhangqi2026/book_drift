@@ -90,7 +90,7 @@
               <el-table-column prop="rank" label="排名" width="80"></el-table-column>
               <el-table-column prop="name" label="用户名"></el-table-column>
               <el-table-column prop="college" label="学院"></el-table-column>
-              <el-table-column prop="borrowCount" label="借阅次数"></el-table-column>
+              <el-table-column prop="activityScore" label="活跃度分数"></el-table-column>
             </el-table>
           </el-card>
         </el-col>
@@ -130,8 +130,10 @@ export default {
     this.$nextTick(() => {
       this.initCharts()
     })
+    window.addEventListener('resize', this.handleResize)
   },
   beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize)
     if (this.donationChart) {
       this.donationChart.dispose()
     }
@@ -143,6 +145,17 @@ export default {
     }
   },
   methods: {
+    handleResize() {
+      if (this.donationChart) {
+        this.donationChart.resize()
+      }
+      if (this.borrowChart) {
+        this.borrowChart.resize()
+      }
+      if (this.statusChart) {
+        this.statusChart.resize()
+      }
+    },
     async fetchStats() {
       try {
         const [booksRes, usersRes, statsRes] = await Promise.all([
@@ -170,14 +183,11 @@ export default {
     },
     async fetchActiveUsers() {
       try {
-        const res = await this.$axios.post('/sysUser/condition/1/10')
-        if (res.code === 20000) {
-          this.activeUsers = res.data.records.map((user, index) => ({
-            rank: index + 1,
-            name: user.name,
-            college: user.college,
-            borrowCount: user.borrowCount || 0
-          })).sort((a, b) => b.borrowCount - a.borrowCount)
+        const res = await this.$axios.post('/userActivity/rank/10/1', null, {
+          params: { rankType: 'total' }
+        })
+        if (res.code === 20000 && res.data) {
+          this.activeUsers = res.data.records || []
         }
       } catch (error) {
         console.error('获取活跃用户失败:', error)
@@ -185,12 +195,17 @@ export default {
     },
     async initCharts() {
       try {
-        const res = await this.$axios.post('/bookStatistics/recent/7')
-        if (res.code === 20000 && res.data) {
-          const data = res.data.reverse()
+        const [recentRes, statusRes] = await Promise.all([
+          this.$axios.post('/bookStatistics/recent/7'),
+          this.$axios.post('/bookStatistics/status')
+        ])
+        if (recentRes.code === 20000 && recentRes.data) {
+          const data = recentRes.data.reverse()
           this.initDonationChart(data)
           this.initBorrowChart(data)
-          this.initStatusChart()
+        }
+        if (statusRes.code === 20000 && statusRes.data) {
+          this.initStatusChart(statusRes.data)
         }
       } catch (error) {
         console.error('获取统计图表数据失败:', error)
@@ -203,6 +218,9 @@ export default {
       })
       const donations = data.map(item => item.totalDonations || 0)
       
+      if (this.donationChart) {
+        this.donationChart.dispose()
+      }
       this.donationChart = echarts.init(this.$refs.donationChart)
       const option = {
         tooltip: {
@@ -214,7 +232,7 @@ export default {
         grid: {
           left: '3%',
           right: '4%',
-          bottom: '3%',
+          bottom: '15%',
           containLabel: true
         },
         xAxis: {
@@ -235,6 +253,7 @@ export default {
         ]
       }
       this.donationChart.setOption(option)
+      this.donationChart.resize()
     },
     initBorrowChart(data) {
       const dates = data.map(item => {
@@ -243,6 +262,9 @@ export default {
       })
       const borrows = data.map(item => item.totalBorrows || 0)
       
+      if (this.borrowChart) {
+        this.borrowChart.dispose()
+      }
       this.borrowChart = echarts.init(this.$refs.borrowChart)
       const option = {
         tooltip: {
@@ -251,7 +273,7 @@ export default {
         grid: {
           left: '3%',
           right: '4%',
-          bottom: '3%',
+          bottom: '15%',
           containLabel: true
         },
         xAxis: {
@@ -273,8 +295,12 @@ export default {
         ]
       }
       this.borrowChart.setOption(option)
+      this.borrowChart.resize()
     },
-    initStatusChart() {
+    initStatusChart(statusData) {
+      if (this.statusChart) {
+        this.statusChart.dispose()
+      }
       this.statusChart = echarts.init(this.$refs.statusChart)
       const option = {
         tooltip: {
@@ -289,10 +315,11 @@ export default {
             name: '书籍状态',
             type: 'pie',
             radius: '60%',
+            center: ['50%', '55%'],
             data: [
-              { value: this.stats.totalBooks - (this.stats.totalBooks * 0.3), name: '待认领' },
-              { value: this.stats.totalBooks * 0.2, name: '已认领' },
-              { value: this.stats.totalBooks * 0.1, name: '已归还' }
+              { value: statusData.availableBooks || 0, name: '待认领' },
+              { value: statusData.borrowedBooks || 0, name: '已认领' },
+              { value: statusData.returnedBooks || 0, name: '已归还' }
             ],
             emphasis: {
               itemStyle: {
@@ -305,6 +332,7 @@ export default {
         ]
       }
       this.statusChart.setOption(option)
+      this.statusChart.resize()
     },
     async collectStatistics() {
       try {
@@ -387,16 +415,19 @@ p {
 
 .chart-card {
   margin-bottom: 20px;
-  height: 350px;
+  height: 450px;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .chart-header {
   font-size: 16px;
   font-weight: bold;
+  margin-bottom: 10px;
 }
 
 .chart {
   width: 100%;
-  height: 300px;
+  height: 380px;
 }
 </style>

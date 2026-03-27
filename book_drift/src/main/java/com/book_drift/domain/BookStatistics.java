@@ -16,6 +16,7 @@ public class BookStatistics {
     private Integer totalBooks;
     private Integer availableBooks;
     private Integer borrowedBooks;
+    private Integer returnedBooks;
     private Integer totalUsers;
     private Integer totalBorrows;
     private Integer totalDonations;

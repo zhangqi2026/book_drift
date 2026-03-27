@@ -8,4 +8,5 @@ public interface BookStatisticsService extends IService<BookStatistics> {
     void collectStatistics();
     List<BookStatistics> getRecentStatistics(int days);
     BookStatistics getLatestStatistics();
+    BookStatistics getBookStatusStatistics();
 }

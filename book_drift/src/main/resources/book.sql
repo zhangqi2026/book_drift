@@ -171,6 +171,7 @@ CREATE TABLE `book_statistics`  (
   `total_books` int(11) NOT NULL DEFAULT 0 COMMENT '总书籍数',
   `available_books` int(11) NOT NULL DEFAULT 0 COMMENT '可借阅书籍数',
   `borrowed_books` int(11) NOT NULL DEFAULT 0 COMMENT '已借阅书籍数',
+  `returned_books` int(11) NOT NULL DEFAULT 0 COMMENT '已归还书籍数',
   `total_users` int(11) NOT NULL DEFAULT 0 COMMENT '总用户数',
   `total_borrows` int(11) NOT NULL DEFAULT 0 COMMENT '总借阅次数',
   `total_donations` int(11) NOT NULL DEFAULT 0 COMMENT '总捐赠次数',

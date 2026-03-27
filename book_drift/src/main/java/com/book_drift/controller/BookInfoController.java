@@ -115,10 +115,10 @@ public class BookInfoController {
      */
     @PostMapping
     @ApiOperation("新增书籍")
-    public BaseResult<Boolean> save(@RequestBody BookInfo bookInfo) {
+    public BaseResult<Integer> save(@RequestBody BookInfo bookInfo) {
         Integer score = bookInfoService.saveWithScore(bookInfo);
         if (score != null) {
-            return BaseResult.ok("新增成功", true).append("score", score);
+            return BaseResult.ok("新增成功", bookInfo.getId()).append("score", score);
         }
         return BaseResult.error("新增失败");
     }
