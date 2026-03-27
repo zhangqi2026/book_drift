@@ -218,11 +218,14 @@ html, body, #__nuxt, #__layout, .app-layout {
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 .app-layout {
   display: flex;
-  height: 100%;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* 侧边栏通用样式 */
@@ -231,12 +234,14 @@ html, body, #__nuxt, #__layout, .app-layout {
   color: white;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  height: 100vh;
   position: fixed;
   left: 0;
   top: 0;
-  height: 100%;
   overflow-y: auto;
   z-index: 1000;
+  box-shadow: 3px 0 8px rgba(0,0,0,0.06);
 }
 
 /* 普通用户侧边栏样式 */
@@ -345,12 +350,13 @@ html, body, #__nuxt, #__layout, .app-layout {
 /* 主内容区域样式 */
 .main-content {
   flex: 1;
-  margin-left: 220px;
-  padding: 20px;
+  height: 100vh;
   overflow-y: auto;
+  margin-left: 220px;
 }
 
 .main-content.full-width {
+  flex: 1;
   margin-left: 0;
 }
 </style>
