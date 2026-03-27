@@ -61,7 +61,7 @@
           :sm="12" 
           :md="8" 
           :lg="6" 
-          v-for="(book, index) in driftBookList" 
+          v-for="book in driftBookList" 
           :key="book.id"
         >
           <el-card class="book-card" shadow="hover">
@@ -373,6 +373,24 @@
         <el-form-item label="作者" prop="author">
           <el-input v-model="donateBook.author" placeholder="请输入作者" />
         </el-form-item>
+        <el-form-item label="选择标签">
+          <el-select
+            v-model="donateBook.tagIds"
+            multiple
+            placeholder="请选择书籍标签"
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="tag in allTags"
+              :key="tag.id"
+              :label="tag.tagName"
+              :value="tag.id"
+            >
+              <span>{{ tag.tagName }}</span>
+              <span v-if="tag.description" style="color: #909399; font-size: 12px; margin-left: 8px;">- {{ tag.description }}</span>
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="success" @click="donateBookSubmit" class="donate-btn">确认捐赠</el-button>
         </el-form-item>
@@ -392,7 +410,8 @@ export default {
       // 捐赠表单数据
       donateBook: {
         book_name: '',
-        author: ''
+        author: '',
+        tagIds: []
       },
       // 捐赠表单校验规则
       donateRules: {
@@ -1028,7 +1047,23 @@ export default {
           })
           
           if (response.code === 20000) {
+            // 获取新创建书籍的ID
+            const bookId = response.data
+            
+            // 如果选择了标签，绑定标签
+            if (this.donateBook.tagIds && this.donateBook.tagIds.length > 0) {
+              await this.$axios.post('/bookTag/bindBookTags', null, {
+                params: {
+                  bookId: bookId,
+                  tagIds: this.donateBook.tagIds.join(',')
+                }
+              })
+            }
+            
+            // 重置表单
             this.$refs.donateFormRef.resetFields()
+            this.donateBook.tagIds = []
+            
             let message = '捐赠成功！书籍已加入漂流列表~'
             if (response.other && response.other.score) {
               message += ` +${response.other.score}分`

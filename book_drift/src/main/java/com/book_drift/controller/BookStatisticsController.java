@@ -30,4 +30,10 @@ public class BookStatisticsController {
         BookStatistics statistics = bookStatisticsService.getLatestStatistics();
         return BaseResult.ok("获取最新统计数据成功", statistics);
     }
+
+    @PostMapping("/status")
+    public BaseResult<BookStatistics> getBookStatusStatistics() {
+        BookStatistics statistics = bookStatisticsService.getBookStatusStatistics();
+        return BaseResult.ok("获取书籍状态统计成功", statistics);
+    }
 }

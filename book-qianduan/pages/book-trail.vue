@@ -62,7 +62,7 @@
           :sm="12" 
           :md="8" 
           :lg="6" 
-          v-for="(book, index) in paginatedBookList" 
+          v-for="book in paginatedBookList" 
           :key="book.id"
         >
           <el-card class="book-card" shadow="hover">

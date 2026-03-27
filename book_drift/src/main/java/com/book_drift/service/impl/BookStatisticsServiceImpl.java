@@ -51,6 +51,10 @@ public class BookStatisticsServiceImpl extends ServiceImpl<BookStatisticsMapper,
         borrowedQuery.eq("book_status", 2);
         statistics.setBorrowedBooks(bookInfoMapper.selectCount(borrowedQuery));
 
+        QueryWrapper<BookInfo> returnedQuery = new QueryWrapper<>();
+        returnedQuery.eq("book_status", 3);
+        statistics.setReturnedBooks(bookInfoMapper.selectCount(returnedQuery));
+
         QueryWrapper<SysUser> userQuery = new QueryWrapper<>();
         statistics.setTotalUsers(sysUserMapper.selectCount(userQuery));
 
@@ -72,6 +76,28 @@ public class BookStatisticsServiceImpl extends ServiceImpl<BookStatisticsMapper,
         statistics.setActiveUsers((int) activeUserCount);
 
         baseMapper.insert(statistics);
+    }
+
+    @Override
+    public BookStatistics getBookStatusStatistics() {
+        BookStatistics statistics = new BookStatistics();
+        
+        QueryWrapper<BookInfo> bookQuery = new QueryWrapper<>();
+        statistics.setTotalBooks(bookInfoMapper.selectCount(bookQuery));
+
+        QueryWrapper<BookInfo> availableQuery = new QueryWrapper<>();
+        availableQuery.eq("book_status", 1);
+        statistics.setAvailableBooks(bookInfoMapper.selectCount(availableQuery));
+
+        QueryWrapper<BookInfo> borrowedQuery = new QueryWrapper<>();
+        borrowedQuery.eq("book_status", 2);
+        statistics.setBorrowedBooks(bookInfoMapper.selectCount(borrowedQuery));
+
+        QueryWrapper<BookInfo> returnedQuery = new QueryWrapper<>();
+        returnedQuery.eq("book_status", 3);
+        statistics.setReturnedBooks(bookInfoMapper.selectCount(returnedQuery));
+
+        return statistics;
     }
 
     @Override
