@@ -208,4 +208,37 @@ CREATE TABLE `book_tag_relation`  (
   UNIQUE INDEX `uk_book_tag`(`book_id`, `tag_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '书籍标签关联表' ROW_FORMAT = Compact;
 
+-- ----------------------------
+-- Table structure for announcement
+-- ----------------------------
+DROP TABLE IF EXISTS `announcement`;
+CREATE TABLE `announcement`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '公告标题',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '公告内容',
+  `publisher_id` int(11) NOT NULL COMMENT '发布人 ID（关联 sys_user.id）',
+  `publisher_name` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '发布人姓名',
+  `is_published` tinyint(4) NOT NULL DEFAULT 1 COMMENT '是否发布：0-草稿 1-已发布',
+  `publish_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
+  `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_publisher_id`(`publisher_id`) USING BTREE,
+  INDEX `idx_publish_time`(`publish_time`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '公告表' ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Table structure for announcement_read
+-- ----------------------------
+DROP TABLE IF EXISTS `announcement_read`;
+CREATE TABLE `announcement_read`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `announcement_id` int(11) NOT NULL COMMENT '公告 ID（关联 announcement.id）',
+  `user_id` int(11) NOT NULL COMMENT '用户 ID（关联 sys_user.id）',
+  `read_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '阅读时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_announcement_user`(`announcement_id`, `user_id`) USING BTREE,
+  INDEX `idx_user_id`(`user_id`) USING BTREE,
+  INDEX `idx_announcement_id`(`announcement_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '公告阅读记录表' ROW_FORMAT = Compact;
+
 SET FOREIGN_KEY_CHECKS = 1;
