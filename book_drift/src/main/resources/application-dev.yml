@@ -1,0 +1,30 @@
+# 开发环境配置（用于Git提交）
+# 服务端口号
+server:
+  port: 10010
+# 配置数据库
+spring:
+  datasource:
+    driverClassName: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/book?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+    username: root
+    password: 123456
+#开启log4j打印SQL语句
+logging:
+  level:
+    com:
+      javaliang:
+        mapper: debug
+# mp日志打印
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+# AI配置
+ai:
+  api-key: 密钥
+  api-url: https://api.scnet.cn/api/llm/v1
+  model: Qwen3-30B-A3B

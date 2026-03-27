@@ -207,4 +207,20 @@ CREATE TABLE `book_tag_relation`  (
   UNIQUE INDEX `uk_book_tag`(`book_id`, `tag_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '书籍标签关联表' ROW_FORMAT = Compact;
 
+-- ----------------------------
+-- Table structure for ai_chat
+-- ----------------------------
+DROP TABLE IF EXISTS `ai_chat`;
+CREATE TABLE `ai_chat`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `user_id` int(11) NOT NULL COMMENT '用户 ID（关联 sys_user.id）',
+  `session_id` bigint(20) NOT NULL COMMENT '会话 ID',
+  `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '角色：user-用户，assistant-AI',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '内容',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_user_id`(`user_id`) USING BTREE,
+  INDEX `idx_session_id`(`session_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = 'AI 问答记录表' ROW_FORMAT = Compact;
+
 SET FOREIGN_KEY_CHECKS = 1;
