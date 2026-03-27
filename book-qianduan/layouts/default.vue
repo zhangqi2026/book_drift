@@ -50,6 +50,12 @@
           </nuxt-link>
         </li>
         <li class="nav-item">
+          <nuxt-link to="/user/announcements" class="nav-link">
+            <i class="el-icon-bell"></i>
+            <span>公告通知</span>
+          </nuxt-link>
+        </li>
+        <li class="nav-item">
           <nuxt-link to="/user/feedback" class="nav-link">
             <i class="el-icon-message"></i>
             <span>反馈建议</span>

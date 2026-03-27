@@ -49,12 +49,14 @@
       </el-table-column>
       <el-table-column
         label="操作"
-        width="200"
+        width="220"
         fixed="right"
       >
         <template slot-scope="scope">
-          <el-button type="text" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button type="text" size="small" style="color: #F56C6C;" @click="handleDelete(scope.row)">删除</el-button>
+          <div class="action-buttons">
+            <el-button type="primary" size="small" icon="el-icon-edit" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button type="danger" size="small" icon="el-icon-delete" @click="handleDelete(scope.row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -233,6 +235,12 @@ export default {
 <style scoped>
 .admin-tags {
   padding: 20px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
 .page-header {
