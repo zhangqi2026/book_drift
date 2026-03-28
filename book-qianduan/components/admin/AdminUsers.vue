@@ -1,128 +1,145 @@
 <template>
   <div class="admin-users">
-    <div class="page-header">
-      <h2>信息管理</h2>
-      <div>
-        <el-button type="primary" icon="el-icon-plus" @click="showAddUserDialog">添加学生</el-button>
+    <!-- 顶部欢迎区域 -->
+    <div class="welcome-section">
+      <div class="welcome-box slide-in">
+        <h1 class="welcome-title">
+          <span class="title-glow">信息管理</span>
+        </h1>
+        <p class="welcome-subtitle">管理系统中的所有用户信息</p>
       </div>
     </div>
     
-    <!-- 搜索栏 -->
-    <div class="search-bar">
-      <el-input
-        v-model="searchKeyword"
-        placeholder="请输入学生姓名搜索"
-        style="width: 300px"
-        clearable
-        @clear="handleSearch"
-      >
-        <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
-      </el-input>
+    <!-- 搜索栏和添加按钮 -->
+    <div class="section-box search-section">
+      <div class="section-header">
+        <h3 class="section-title">搜索与操作</h3>
+        <el-button type="primary" icon="el-icon-plus" @click="showAddUserDialog" class="action-btn">添加学生</el-button>
+      </div>
+      <div class="search-bar">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="请输入学生姓名搜索"
+          class="search-input"
+          style="width: 350px"
+          clearable
+          @clear="handleSearch"
+        >
+          <el-button slot="append" icon="el-icon-search" @click="handleSearch" class="search-btn"></el-button>
+        </el-input>
+      </div>
     </div>
     
     <!-- 学生列表 -->
-    <el-table
-      :data="userList"
-      border
-      stripe
-      class="user-list-table"
-      :empty-text="`暂无学生`"
-      v-loading="loading"
-    >
-      <el-table-column
-        label="编号"
-        width="70"
-        align="center"
+    <div class="section-box">
+      <div class="section-header">
+        <h3 class="section-title">用户列表</h3>
+      </div>
+      <el-table
+        :data="userList"
+        border
+        stripe
+        class="user-list-table custom-table"
+        :empty-text="`暂无学生`"
+        v-loading="loading"
       >
-        <template slot-scope="scope">
-          {{ scope.$index + 1 + (currentPage - 1) * pageSize }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="name"
-        label="姓名"
-        width="100"
-        align="center"
-      />
-      <el-table-column
-        prop="studentId"
-        label="学号"
-        width="140"
-        align="center"
-      />
-      <el-table-column
-        prop="college"
-        label="学院"
-        min-width="150"
-        align="center"
-      />
-      <el-table-column
-        prop="borrowCount"
-        label="借阅次数"
-        width="90"
-        align="center"
+        <el-table-column
+          label="编号"
+          width="70"
+          align="center"
+        >
+          <template slot-scope="scope">
+            {{ scope.$index + 1 + (currentPage - 1) * pageSize }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="name"
+          label="姓名"
+          width="100"
+          align="center"
+        />
+        <el-table-column
+          prop="studentId"
+          label="学号"
+          width="140"
+          align="center"
+        />
+        <el-table-column
+          prop="college"
+          label="学院"
+          min-width="150"
+          align="center"
+        />
+        <el-table-column
+          prop="borrowCount"
+          label="借阅次数"
+          width="90"
+          align="center"
+        >
+          <template slot-scope="scope">
+            {{ scope.row.borrowCount || 0 }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="用户角色"
+          width="100"
+          align="center"
+        >
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.role === 1 ? 'danger' : 'primary'" size="small" class="custom-tag">
+              {{ scope.row.role === 1 ? '管理员' : '普通用户' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="捐赠次数"
+          width="90"
+          align="center"
+        >
+          <template slot-scope="scope">
+            {{ getDonationCount(scope.row.id) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="160"
+          align="center"
+          fixed="right"
+        >
+          <template slot-scope="scope">
+            <el-button
+              type="primary"
+              size="mini"
+              @click="editUser(scope.row)"
+              class="action-btn"
+            >
+              修改
+            </el-button>
+            <el-button
+              type="danger"
+              size="mini"
+              @click="deleteUser(scope.row.id)"
+              class="action-btn"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      
+      <!-- 分页 -->
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="currentPage"
+        :page-sizes="[10, 20, 50]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        class="pagination-box custom-pagination"
       >
-        <template slot-scope="scope">
-          {{ scope.row.borrowCount || 0 }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="用户角色"
-        width="100"
-        align="center"
-      >
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.role === 1 ? 'danger' : 'primary'" size="small">
-            {{ scope.row.role === 1 ? '管理员' : '普通用户' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="捐赠次数"
-        width="90"
-        align="center"
-      >
-        <template slot-scope="scope">
-          {{ getDonationCount(scope.row.id) }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="操作"
-        width="160"
-        align="center"
-        fixed="right"
-      >
-        <template slot-scope="scope">
-          <el-button
-            type="primary"
-            size="mini"
-            @click="editUser(scope.row)"
-          >
-            修改
-          </el-button>
-          <el-button
-            type="danger"
-            size="mini"
-            @click="deleteUser(scope.row.id)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    
-    <!-- 分页 -->
-    <el-pagination
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      :current-page="currentPage"
-      :page-sizes="[10, 20, 50]"
-      :page-size="pageSize"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      class="pagination-box"
-    >
-    </el-pagination>
+      </el-pagination>
+    </div>
     
     <!-- 添加/编辑学生弹窗 -->
     <el-dialog
@@ -130,6 +147,7 @@
       :visible.sync="userDialogVisible"
       width="500px"
       @close="closeUserDialog"
+      class="custom-dialog"
     >
       <el-form :model="userForm" :rules="userRules" ref="userFormRef" label-width="100px">
         <el-form-item label="姓名" prop="name">
@@ -149,7 +167,7 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="saveUser">保存</el-button>
+          <el-button type="primary" @click="saveUser" class="action-btn">保存</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -366,30 +384,219 @@ export default {
 
 <style scoped>
 .admin-users {
-  padding: 20px;
+  position: relative;
+  z-index: 10;
 }
 
-.page-header {
+.slide-in {
+  animation: slideIn 0.6s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 欢迎区域 */
+.welcome-section {
+  margin-bottom: 20px;
+}
+
+.welcome-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(171, 240, 209, 0.4);
+  box-shadow: 5px 3px 10px rgba(0, 0, 0, 0.07);
+  padding: 20px 28px;
+  text-align: center;
+  position: relative;
+}
+
+.welcome-box::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #abf0d1, #d4eea7, #fef1d1, #abf0d1);
+  border-radius: 20px;
+  z-index: -1;
+  background-size: 400% 400%;
+  animation: borderGlow 4s ease infinite;
+  opacity: 0.5;
+}
+
+@keyframes borderGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.welcome-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+}
+
+.title-glow {
+  background: linear-gradient(135deg, #6b9a8a 0%, #7a9d5a 50%, #c4a77a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome-subtitle {
+  font-size: 14px;
+  color: #8a9a8a;
+  margin: 0 0 15px 0;
+}
+
+/* 区域通用样式 */
+.section-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(171, 240, 209, 0.3);
+  box-shadow: 5px 3px 10px rgba(0, 0, 0, 0.07);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  transition: all 0.35s ease;
+}
+
+.section-box:hover {
+  box-shadow: 6px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
-.page-header h2 {
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #5a6a5a;
   margin: 0;
-  color: #303133;
+}
+
+/* 搜索区域 */
+.search-section {
+  padding: 16px 24px;
 }
 
 .search-bar {
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
+.search-input >>> .el-input__inner {
+  border-radius: 8px 0 0 8px;
+  border-color: rgba(171, 240, 209, 0.5);
+}
+
+.search-btn {
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  border: none;
+  color: #4a6a5a;
+  transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(171, 240, 209, 0.4);
+}
+
+/* 表格样式 */
 .user-list-table {
   margin-bottom: 20px;
 }
 
+.custom-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.custom-table >>> th {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.2), rgba(212, 238, 167, 0.2));
+  color: #5a6a5a;
+  font-weight: 600;
+  border: none;
+}
+
+.custom-table >>> td {
+  color: #6a7a6a;
+  border-color: rgba(171, 240, 209, 0.15);
+}
+
+.custom-table >>> .el-table__row:hover > td {
+  background: rgba(171, 240, 209, 0.08);
+}
+
+/* 分页器样式 */
 .pagination-box {
   text-align: right;
+}
+
+.custom-pagination >>> .el-pager li {
+  border-radius: 8px;
+  margin: 0 4px;
+  font-weight: 500;
+}
+
+.custom-pagination >>> .el-pager li.active {
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  color: #4a6a5a;
+}
+
+.custom-pagination >>> .btn-prev,
+.custom-pagination >>> .btn-next {
+  border-radius: 8px;
+}
+
+/* 按钮样式 */
+.action-btn {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* 标签样式 */
+.custom-tag {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* 弹窗样式 */
+.custom-dialog >>> .el-dialog__header {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
+  border-radius: 4px 4px 0 0;
+}
+
+.custom-dialog >>> .el-dialog__title {
+  color: #5a6a5a;
+  font-weight: 700;
 }
 </style>

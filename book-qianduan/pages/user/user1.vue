@@ -1,401 +1,438 @@
 <template>
   <div class="book-drift-container">
-    <!-- 页面标题 -->
-    <h2>校园闲置书籍漂流管理系统</h2>
+    <!-- 粒子背景 -->
+    <div class="particles-bg">
+      <div v-for="i in 30" :key="i" class="particle" :style="getParticleStyle(i)"></div>
+    </div>
+    
+    <!-- 装饰性背景元素 -->
+    <div class="bg-decoration">
+      <div class="circle circle-1"></div>
+      <div class="circle circle-2"></div>
+      <div class="grid-lines"></div>
+    </div>
+    
+    <div class="content-wrapper">
+      <!-- 页面标题 -->
+      <div class="page-title-section">
+        <h2 class="page-title">校园闲置书籍漂流管理系统</h2>
+      </div>
 
-    <!-- 搜索栏 + 标签筛选 + 分页控制区 -->
-    <div class="search-pagination-bar">
-      <!-- 书籍搜索和标签筛选 -->
-      <div class="search-tags-box">
-        <div class="search-box">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="请输入书籍名称搜索"
-            class="search-input"
-            style="width: 250px"
-          />
-          <el-button type="primary" @click="searchBook" class="search-btn">搜索</el-button>
-          <el-button @click="resetSearch" class="reset-btn">重置</el-button>
-        </div>
-        <div class="tags-filter-box">
-          <span class="tags-label">标签筛选：</span>
-          <el-select
-            v-model="selectedTagIds"
-            multiple
-            placeholder="选择标签筛选"
-            style="width: 300px;"
-            @change="handleTagFilterChange"
-          >
-            <el-option
-              v-for="tag in allTags"
-              :key="tag.id"
-              :label="tag.tagName"
-              :value="tag.id"
+      <!-- 搜索栏 + 标签筛选 + 分页控制区 -->
+      <div class="search-pagination-bar">
+        <!-- 书籍搜索和标签筛选 -->
+        <div class="search-tags-box">
+          <div class="search-box">
+            <el-input
+              v-model="searchKeyword"
+              placeholder="请输入书籍名称搜索"
+              class="search-input"
+              style="width: 250px"
+            />
+            <el-button type="primary" @click="searchBook" class="search-btn">搜索</el-button>
+            <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+          </div>
+          <div class="tags-filter-box">
+            <span class="tags-label">标签筛选：</span>
+            <el-select
+              v-model="selectedTagIds"
+              multiple
+              placeholder="选择标签筛选"
+              style="width: 300px;"
+              @change="handleTagFilterChange"
             >
-              <span>{{ tag.tagName }}</span>
-              <span v-if="tag.description" style="color: #909399; font-size: 12px; margin-left: 8px;">- {{ tag.description }}</span>
-            </el-option>
-          </el-select>
+              <el-option
+                v-for="tag in allTags"
+                :key="tag.id"
+                :label="tag.tagName"
+                :value="tag.id"
+              >
+                <span>{{ tag.tagName }}</span>
+                <span v-if="tag.description" style="color: #909399; font-size: 12px; margin-left: 8px;">- {{ tag.description }}</span>
+              </el-option>
+            </el-select>
+          </div>
         </div>
-      </div>
 
-      <!-- 分页控制 -->
-      <el-pagination
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :current-page="currentPage"
-        :page-sizes="[4, 8, 12]"
-        :page-size="pageSize"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="total"
-        class="pagination-box"
-      >
-      </el-pagination>
-    </div>
-
-    <!-- 漂流书籍卡片列表 -->
-    <div class="book-card-list">
-      <el-row :gutter="20">
-        <el-col 
-          :xs="24" 
-          :sm="12" 
-          :md="8" 
-          :lg="6" 
-          v-for="book in driftBookList" 
-          :key="book.id"
-        >
-          <el-card class="book-card" shadow="hover">
-            <div class="book-cover">
-              <i class="el-icon-notebook-2"></i>
-            </div>
-            <div class="book-info">
-              <h3 class="book-title">{{ book.bookName }}</h3>
-              <div class="book-tags">
-                <el-tag
-                  v-for="tag in book.tags"
-                  :key="tag.id"
-                  size="mini"
-                  style="margin-right: 4px; margin-bottom: 4px;"
-                >
-                  {{ tag.tagName }}
-                </el-tag>
-              </div>
-              <p class="book-author">作者：{{ book.author }}</p>
-              <div class="book-status-section">
-                <el-tag :type="getStatusTagType(book.bookStatus)" size="small">
-                  {{ getStatusText(book.bookStatus) }}
-                </el-tag>
-                <!-- 特殊状态提示 -->
-                <span v-if="book.donorId === currentUser.id" class="special-tag">
-                  <el-tag type="info" size="small">我捐赠的</el-tag>
-                </span>
-                <span v-if="book.bookStatus === 2 && book.currentHolderId !== currentUser.id" class="special-tag">
-                  <el-tag type="warning" size="small">已被他人借走</el-tag>
-                </span>
-              </div>
-              <div class="book-actions">
-                <!-- 归还按钮（当前用户是持有人） -->
-                <el-button
-                  v-if="book.bookStatus === 2 && book.currentHolderId === currentUser.id"
-                  type="success"
-                  size="small"
-                  @click="returnBook(book.id)"
-                >
-                  归还
-                </el-button>
-                <!-- 认领按钮（待认领或已归还，且不是自己捐赠的） -->
-                <el-button
-                  v-if="(book.bookStatus === 1 || book.bookStatus === 3) && book.donorId !== currentUser.id"
-                  type="primary"
-                  size="small"
-                  @click="addDriftCount(book.id)"
-                >
-                  {{ book.bookStatus === 1 ? '认领' : '认领（已归还）' }}
-                </el-button>
-                <!-- 读书笔记按钮 -->
-                <el-button
-                  type="warning"
-                  size="small"
-                  @click="viewBookNotes(book)"
-                >
-                  读书笔记
-                </el-button>
-                <!-- 查看轨迹按钮 -->
-                <el-button
-                  type="info"
-                  size="small"
-                  @click="viewClaimRecords(book)"
-                >
-                  查看轨迹
-                </el-button>
-                <!-- 仅管理员显示上下架按钮 -->
-                <el-button
-                  v-if="currentUser.role === 1"
-                  type="danger"
-                  size="small"
-                  @click="changeBookStatus(book.id, book.bookStatus)"
-                >
-                  {{ book.bookStatus === 1 ? '下架' : (book.bookStatus === 2 ? '归还' : '上架') }}
-                </el-button>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      <div v-if="driftBookList.length === 0" class="empty-data">暂无符合条件的书籍</div>
-    </div>
-
-    <!-- 书籍轨迹弹窗 -->
-    <el-dialog
-      title="书籍漂流轨迹"
-      :visible.sync="recordDialogVisible"
-      width="900px"
-      @close="closeDialog"
-    >
-      <div v-if="currentBook">
-        <div class="book-info-header" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 5px;">
-          <h4 style="margin: 0 0 10px 0; color: #409EFF;">《{{ currentBook.bookName || currentBook.book_name || '未知书籍' }}》</h4>
-          <p style="margin: 5px 0; color: #606266;">作者：{{ currentBook.author || '未知' }}</p>
-        </div>
-        
-        <el-table
-          :data="currentBook.claimRecords"
-          border
-          stripe
-          :empty-text="'暂无借阅记录'"
-        >
-          <el-table-column
-            prop="claimerName"
-            label="借阅人"
-            width="120"
-          />
-          <el-table-column
-            prop="claimTime"
-            label="借阅时间"
-            width="180"
-          />
-          <el-table-column
-            prop="returnTime"
-            label="归还时间"
-            width="180"
-          />
-          <el-table-column
-            prop="dueTime"
-            label="应还时间"
-            width="180"
-          />
-          <el-table-column
-            label="状态"
-            width="100"
-          >
-            <template slot-scope="scope">
-              <el-tag :type="scope.row.returnTime ? 'success' : 'warning'">
-                {{ scope.row.returnTime ? '已归还' : '借阅中' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="是否超期"
-            width="100"
-          >
-            <template slot-scope="scope">
-              <el-tag :type="scope.row.isOverdue === 1 ? 'danger' : 'success'">
-                {{ scope.row.isOverdue === 1 ? '是' : '否' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-        
-        <!-- 分页组件 -->
+        <!-- 分页控制 -->
         <el-pagination
-          @current-change="handleTrailPageChange"
-          :current-page="trailCurrentPage"
-          :page-size="trailPageSize"
-          layout="total, prev, pager, next, jumper"
-          :total="trailTotal"
-          style="margin-top: 15px; text-align: right;"
-        />
-      </div>
-    </el-dialog>
-
-    <!-- 读书笔记弹窗 -->
-    <el-dialog
-      title="读书笔记"
-      :visible.sync="notesDialogVisible"
-      width="95%"
-      @close="closeNotesDialog"
-    >
-      <div v-if="currentNoteBook">
-        <div class="book-info-header" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 5px;">
-          <h4 style="margin: 0 0 10px 0; color: #409EFF;">《{{ currentNoteBook.bookName || currentNoteBook.book_name || '未知书籍' }}》</h4>
-          <p style="margin: 5px 0; color: #606266;">作者：{{ currentNoteBook.author || '未知' }}</p>
-        </div>
-        
-        <!-- 写笔记按钮 -->
-        <div style="margin-bottom: 15px;">
-          <el-button
-            type="primary"
-            @click="showAddNoteDialog"
-            icon="el-icon-edit"
-          >
-            写笔记
-          </el-button>
-        </div>
-        
-        <!-- 笔记列表 -->
-        <el-table
-          :data="bookNotes"
-          border
-          stripe
-          :empty-text="'暂无读书笔记'"
-          style="margin-bottom: 20px;"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-sizes="[4, 8, 12]"
+          :page-size="pageSize"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          class="pagination-box custom-pagination"
         >
-          <el-table-column
-            prop="noteContent"
-            label="笔记内容"
-            min-width="300"
-            show-overflow-tooltip
-          />
-          <el-table-column
-            prop="userName"
-            label="笔记作者"
-            width="120"
-          />
-          <el-table-column
-            prop="likeCount"
-            label="点赞数"
-            width="80"
-            align="center"
-          />
-          <el-table-column
-            label="笔记时间"
-            width="180"
-            align="center"
+        </el-pagination>
+      </div>
+
+      <!-- 漂流书籍卡片列表 -->
+      <div class="book-card-list">
+        <el-row :gutter="24">
+          <el-col 
+            :xs="24" 
+            :sm="12" 
+            :md="8" 
+            :lg="6" 
+            v-for="book in driftBookList" 
+            :key="book.id"
           >
-            <template slot-scope="scope">
-              {{ formatDateTime(scope.row.createTime) }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="操作"
-            width="220"
-            align="center"
-            fixed="right"
-          >
-            <template slot-scope="scope">
-              <div style="display: flex; gap: 5px; justify-content: center;">
-                <el-button
-                  type="primary"
-                  size="mini"
-                  @click="likeNote(scope.row)"
-                  style="padding: 7px 10px;"
-                >
-                  {{ scope.row.isLiked ? '取消点赞' : '点赞' }}
-                </el-button>
-                <!-- 仅笔记作者可以编辑删除 -->
-                <template v-if="scope.row.userId == currentUser.id">
+            <div class="book-card">
+              <div class="book-cover">
+                <i class="el-icon-notebook-2"></i>
+              </div>
+              <div class="book-info">
+                <h3 class="book-title">{{ book.bookName }}</h3>
+                <div class="book-tags">
+                  <el-tag
+                    v-for="tag in book.tags"
+                    :key="tag.id"
+                    size="mini"
+                    class="book-tag"
+                  >
+                    {{ tag.tagName }}
+                  </el-tag>
+                </div>
+                <p class="book-author">作者：{{ book.author }}</p>
+                <div class="book-status-section">
+                  <el-tag :type="getStatusTagType(book.bookStatus)" size="small" class="custom-tag">
+                    {{ getStatusText(book.bookStatus) }}
+                  </el-tag>
+                  <!-- 特殊状态提示 -->
+                  <span v-if="book.donorId === currentUser.id" class="special-tag">
+                    <el-tag type="info" size="small" class="custom-tag">我捐赠的</el-tag>
+                  </span>
+                  <span v-if="book.bookStatus === 2 && book.currentHolderId !== currentUser.id" class="special-tag">
+                    <el-tag type="warning" size="small" class="custom-tag">已被他人借走</el-tag>
+                  </span>
+                </div>
+                <div class="book-actions">
+                  <!-- 归还按钮（当前用户是持有人） -->
+                  <el-button
+                    v-if="book.bookStatus === 2 && book.currentHolderId === currentUser.id"
+                    type="success"
+                    size="small"
+                    @click="returnBook(book.id)"
+                    class="action-btn"
+                  >
+                    归还
+                  </el-button>
+                  <!-- 认领按钮（待认领或已归还，且不是自己捐赠的） -->
+                  <el-button
+                    v-if="(book.bookStatus === 1 || book.bookStatus === 3) && book.donorId !== currentUser.id"
+                    type="primary"
+                    size="small"
+                    @click="addDriftCount(book.id)"
+                    class="action-btn"
+                  >
+                    {{ book.bookStatus === 1 ? '认领' : '认领（已归还）' }}
+                  </el-button>
+                  <!-- 读书笔记按钮 -->
                   <el-button
                     type="warning"
-                    size="mini"
-                    @click="editNote(scope.row)"
-                    style="padding: 7px 10px;"
+                    size="small"
+                    @click="viewBookNotes(book)"
+                    class="action-btn"
                   >
-                    编辑
+                    读书笔记
                   </el-button>
+                  <!-- 查看轨迹按钮 -->
                   <el-button
+                    type="info"
+                    size="small"
+                    @click="viewClaimRecords(book)"
+                    class="action-btn"
+                  >
+                    查看轨迹
+                  </el-button>
+                  <!-- 仅管理员显示上下架按钮 -->
+                  <el-button
+                    v-if="currentUser.role === 1"
                     type="danger"
+                    size="small"
+                    @click="changeBookStatus(book.id, book.bookStatus)"
+                    class="action-btn"
+                  >
+                    {{ book.bookStatus === 1 ? '下架' : (book.bookStatus === 2 ? '归还' : '上架') }}
+                  </el-button>
+                </div>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+        <div v-if="driftBookList.length === 0" class="empty-data">暂无符合条件的书籍</div>
+      </div>
+
+      <!-- 书籍轨迹弹窗 -->
+      <el-dialog
+        title="书籍漂流轨迹"
+        :visible.sync="recordDialogVisible"
+        width="900px"
+        @close="closeDialog"
+        class="custom-dialog"
+      >
+        <div v-if="currentBook">
+          <div class="book-info-header" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15)); border-radius: 12px;">
+            <h4 style="margin: 0 0 10px 0; color: #5a6a5a; font-weight: 700;">《{{ currentBook.bookName || currentBook.book_name || '未知书籍' }}》</h4>
+            <p style="margin: 5px 0; color: #6a7a6a;">作者：{{ currentBook.author || '未知' }}</p>
+          </div>
+          
+          <el-table
+            :data="currentBook.claimRecords"
+            border
+            stripe
+            :empty-text="'暂无借阅记录'"
+            class="custom-table"
+          >
+            <el-table-column
+              prop="claimerName"
+              label="借阅人"
+              width="120"
+            />
+            <el-table-column
+              prop="claimTime"
+              label="借阅时间"
+              width="180"
+            />
+            <el-table-column
+              prop="returnTime"
+              label="归还时间"
+              width="180"
+            />
+            <el-table-column
+              prop="dueTime"
+              label="应还时间"
+              width="180"
+            />
+            <el-table-column
+              label="状态"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-tag :type="scope.row.returnTime ? 'success' : 'warning'" class="custom-tag">
+                  {{ scope.row.returnTime ? '已归还' : '借阅中' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="是否超期"
+              width="100"
+            >
+              <template slot-scope="scope">
+                <el-tag :type="scope.row.isOverdue === 1 ? 'danger' : 'success'" class="custom-tag">
+                  {{ scope.row.isOverdue === 1 ? '是' : '否' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          
+          <!-- 分页组件 -->
+          <el-pagination
+            @current-change="handleTrailPageChange"
+            :current-page="trailCurrentPage"
+            :page-size="trailPageSize"
+            layout="total, prev, pager, next, jumper"
+            :total="trailTotal"
+            style="margin-top: 15px; text-align: right;"
+            class="custom-pagination"
+          />
+        </div>
+      </el-dialog>
+
+      <!-- 读书笔记弹窗 -->
+      <el-dialog
+        title="读书笔记"
+        :visible.sync="notesDialogVisible"
+        width="95%"
+        @close="closeNotesDialog"
+        class="custom-dialog"
+      >
+        <div v-if="currentNoteBook">
+          <div class="book-info-header" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15)); border-radius: 12px;">
+            <h4 style="margin: 0 0 10px 0; color: #5a6a5a; font-weight: 700;">《{{ currentNoteBook.bookName || currentNoteBook.book_name || '未知书籍' }}》</h4>
+            <p style="margin: 5px 0; color: #6a7a6a;">作者：{{ currentNoteBook.author || '未知' }}</p>
+          </div>
+          
+          <!-- 写笔记按钮 -->
+          <div style="margin-bottom: 15px;">
+            <el-button
+              type="primary"
+              @click="showAddNoteDialog"
+              icon="el-icon-edit"
+              class="action-btn"
+            >
+              写笔记
+            </el-button>
+          </div>
+          
+          <!-- 笔记列表 -->
+          <el-table
+            :data="bookNotes"
+            border
+            stripe
+            :empty-text="'暂无读书笔记'"
+            style="margin-bottom: 20px;"
+            class="custom-table"
+          >
+            <el-table-column
+              prop="noteContent"
+              label="笔记内容"
+              min-width="300"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="userName"
+              label="笔记作者"
+              width="120"
+            />
+            <el-table-column
+              prop="likeCount"
+              label="点赞数"
+              width="80"
+              align="center"
+            />
+            <el-table-column
+              label="笔记时间"
+              width="180"
+              align="center"
+            >
+              <template slot-scope="scope">
+                {{ formatDateTime(scope.row.createTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="操作"
+              width="220"
+              align="center"
+              fixed="right"
+            >
+              <template slot-scope="scope">
+                <div style="display: flex; gap: 5px; justify-content: center;">
+                  <el-button
+                    type="primary"
                     size="mini"
-                    @click="deleteNote(scope.row.id)"
+                    @click="likeNote(scope.row)"
+                    class="action-btn"
                     style="padding: 7px 10px;"
                   >
-                    删除
+                    {{ scope.row.isLiked ? '取消点赞' : '点赞' }}
                   </el-button>
-                </template>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-        
-        <!-- 分页组件 -->
-        <el-pagination
-          @current-change="handleNotesPageChange"
-          :current-page="notesCurrentPage"
-          :page-size="notesPageSize"
-          layout="total, prev, pager, next, jumper"
-          :total="notesTotal"
-          style="text-align: right;"
-        />
-      </div>
-    </el-dialog>
-
-    <!-- 添加/编辑笔记弹窗 -->
-    <el-dialog
-      :title="noteFormMode === 'add' ? '添加读书笔记' : '编辑读书笔记'"
-      :visible.sync="noteFormDialogVisible"
-      width="600px"
-      @close="closeNoteFormDialog"
-    >
-      <el-form
-        :model="noteForm"
-        :rules="noteFormRules"
-        ref="noteFormRef"
-        label-width="80px"
-      >
-        <el-form-item label="笔记内容" prop="noteContent">
-          <el-input
-            v-model="noteForm.noteContent"
-            type="textarea"
-            :rows="8"
-            placeholder="请输入你的读书笔记..."
-            maxlength="2000"
-            show-word-limit
+                  <!-- 仅笔记作者可以编辑删除 -->
+                  <template v-if="scope.row.userId == currentUser.id">
+                    <el-button
+                      type="warning"
+                      size="mini"
+                      @click="editNote(scope.row)"
+                      class="action-btn"
+                      style="padding: 7px 10px;"
+                    >
+                      编辑
+                    </el-button>
+                    <el-button
+                      type="danger"
+                      size="mini"
+                      @click="deleteNote(scope.row.id)"
+                      class="action-btn"
+                      style="padding: 7px 10px;"
+                    >
+                      删除
+                    </el-button>
+                  </template>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+          
+          <!-- 分页组件 -->
+          <el-pagination
+            @current-change="handleNotesPageChange"
+            :current-page="notesCurrentPage"
+            :page-size="notesPageSize"
+            layout="total, prev, pager, next, jumper"
+            :total="notesTotal"
+            style="text-align: right;"
+            class="custom-pagination"
           />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="noteFormDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="submitNoteForm" :loading="submitting">确 定</el-button>
-      </div>
-    </el-dialog>
+        </div>
+      </el-dialog>
 
-    <!-- 捐赠书籍表单（仅普通用户显示） -->
-    <el-card v-if="currentUser.role === 2" class="donate-form-container" header="捐赠闲置书籍">
-      <el-form
-        :model="donateBook"
-        :rules="donateRules"
-        ref="donateFormRef"
-        label-width="100px"
-        class="donate-form"
+      <!-- 添加/编辑笔记弹窗 -->
+      <el-dialog
+        :title="noteFormMode === 'add' ? '添加读书笔记' : '编辑读书笔记'"
+        :visible.sync="noteFormDialogVisible"
+        width="600px"
+        @close="closeNoteFormDialog"
+        class="custom-dialog"
       >
-        <el-form-item label="书籍名称" prop="book_name">
-          <el-input v-model="donateBook.book_name" placeholder="请输入书籍名称" />
-        </el-form-item>
-        <el-form-item label="作者" prop="author">
-          <el-input v-model="donateBook.author" placeholder="请输入作者" />
-        </el-form-item>
-        <el-form-item label="选择标签">
-          <el-select
-            v-model="donateBook.tagIds"
-            multiple
-            placeholder="请选择书籍标签"
-            style="width: 100%;"
+        <el-form
+          :model="noteForm"
+          :rules="noteFormRules"
+          ref="noteFormRef"
+          label-width="80px"
+        >
+          <el-form-item label="笔记内容" prop="noteContent">
+            <el-input
+              v-model="noteForm.noteContent"
+              type="textarea"
+              :rows="8"
+              placeholder="请输入你的读书笔记..."
+              maxlength="2000"
+              show-word-limit
+            />
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="noteFormDialogVisible = false" class="action-btn">取 消</el-button>
+          <el-button type="primary" @click="submitNoteForm" :loading="submitting" class="action-btn">确 定</el-button>
+        </div>
+      </el-dialog>
+
+      <!-- 捐赠书籍表单（仅普通用户显示） -->
+      <div v-if="currentUser.role === 2" class="donate-section">
+        <div class="section-box">
+          <div class="section-header">
+            <h3 class="section-title">捐赠闲置书籍</h3>
+          </div>
+          <el-form
+            :model="donateBook"
+            :rules="donateRules"
+            ref="donateFormRef"
+            label-width="100px"
+            class="donate-form"
           >
-            <el-option
-              v-for="tag in allTags"
-              :key="tag.id"
-              :label="tag.tagName"
-              :value="tag.id"
-            >
-              <span>{{ tag.tagName }}</span>
-              <span v-if="tag.description" style="color: #909399; font-size: 12px; margin-left: 8px;">- {{ tag.description }}</span>
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="success" @click="donateBookSubmit" class="donate-btn">确认捐赠</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+            <el-form-item label="书籍名称" prop="book_name">
+              <el-input v-model="donateBook.book_name" placeholder="请输入书籍名称" />
+            </el-form-item>
+            <el-form-item label="作者" prop="author">
+              <el-input v-model="donateBook.author" placeholder="请输入作者" />
+            </el-form-item>
+            <el-form-item label="选择标签">
+              <el-select
+                v-model="donateBook.tagIds"
+                multiple
+                placeholder="请选择书籍标签"
+                style="width: 100%;"
+              >
+                <el-option
+                  v-for="tag in allTags"
+                  :key="tag.id"
+                  :label="tag.tagName"
+                  :value="tag.id"
+                >
+                  <span>{{ tag.tagName }}</span>
+                  <span v-if="tag.description" style="color: #909399; font-size: 12px; margin-left: 8px;">- {{ tag.description }}</span>
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="success" @click="donateBookSubmit" class="action-btn donate-btn">确认捐赠</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -472,6 +509,19 @@ export default {
     this.fetchAllTags()
   },
   methods: {
+    getParticleStyle(index) {
+      const size = Math.random() * 4 + 2
+      const duration = Math.random() * 20 + 10
+      const delay = Math.random() * 10
+      return {
+        width: `${size}px`,
+        height: `${size}px`,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animationDuration: `${duration}s`,
+        animationDelay: `${delay}s`
+      }
+    },
     // 检查登录状态
     checkLoginStatus() {
       const isLoggedIn = localStorage.getItem('isLoggedIn')
@@ -553,7 +603,7 @@ export default {
       switch (status) {
         case 1: return 'warning'  // 待认领
         case 2: return 'success'  // 已认领
-        case 3: return 'danger'   // 已归还
+        case 3: return 'info'   // 已归还
         default: return 'info'
       }
     },
@@ -1156,11 +1206,138 @@ export default {
 </script>
 
 <style scoped>
-/* 仅保留少量自定义样式，Element组件自带大部分样式 */
 .book-drift-container {
-  width: 95%;
-  margin: 20px auto;
-  font-family: "Microsoft YaHei", sans-serif;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fef9f0 0%, #f5f0e6 50%, #e8f5e2 100%);
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* 粒子背景 */
+.particles-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: radial-gradient(circle, #abf0d1, #d4eea7);
+  border-radius: 50%;
+  box-shadow: 0 0 10px #abf0d1, 0 0 20px #d4eea7;
+  animation: particleFloat linear infinite;
+  pointer-events: none;
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* 装饰性背景元素 */
+.bg-decoration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
+  border: 1px solid rgba(171, 240, 209, 0.2);
+  box-shadow: 0 0 40px rgba(171, 240, 209, 0.15), inset 0 0 40px rgba(171, 240, 209, 0.08);
+  animation: float 12s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 300px;
+  height: 300px;
+  bottom: -50px;
+  left: -50px;
+  animation-delay: 3s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translateY(-30px) rotate(180deg) scale(1.03);
+  }
+}
+
+.grid-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(171, 240, 209, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(171, 240, 209, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.content-wrapper {
+  position: relative;
+  z-index: 10;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* 页面标题 */
+.page-title-section {
+  margin-bottom: 20px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #6b9a8a 0%, #7a9d5a 50%, #c4a77a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* 搜索栏布局 */
@@ -1169,9 +1346,10 @@ export default {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 20px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.25), rgba(212, 238, 167, 0.25));
+  border-radius: 16px;
+  border: 1px solid rgba(171, 240, 209, 0.3);
   flex-wrap: wrap;
   gap: 15px;
 }
@@ -1179,7 +1357,7 @@ export default {
 .search-tags-box {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .search-box {
@@ -1198,11 +1376,7 @@ export default {
   font-size: 14px;
   color: #606266;
   white-space: nowrap;
-}
-
-.book-tags {
-  margin: 10px 0;
-  min-height: 24px;
+  font-weight: 500;
 }
 
 /* 书籍卡片列表 */
@@ -1211,48 +1385,70 @@ export default {
 }
 
 .book-card {
-  margin-bottom: 20px;
-  transition: all 0.3s;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(171, 240, 209, 0.3);
+  box-shadow: 5px 2px 10px rgba(0, 0, 0, 0.06);
+  transition: all 0.35s ease;
+  margin-bottom: 24px;
+  overflow: hidden;
 }
 
 .book-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 6px 3px 12px rgba(0, 0, 0, 0.1);
+  border-color: rgba(171, 240, 209, 0.6);
 }
 
 .book-cover {
-  width: calc(100% + 40px);
+  width: 100%;
   height: 120px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px 4px 0 0;
-  margin: -20px -20px 15px -20px;
 }
 
 .book-cover i {
   font-size: 48px;
-  color: white;
+  color: #4a6a5a;
 }
 
 .book-info {
   text-align: center;
+  padding: 16px 18px;
 }
 
 .book-title {
   font-size: 16px;
-  font-weight: bold;
-  color: #303133;
+  font-weight: 700;
+  color: #5a6a5a;
   margin: 0 0 10px 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.book-tags {
+  margin: 10px 0;
+  min-height: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.book-tag {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
 .book-author {
   font-size: 13px;
-  color: #909399;
+  color: #8a9a8a;
   margin: 5px 0;
+  font-weight: 500;
 }
 
 .book-status-section {
@@ -1260,7 +1456,7 @@ export default {
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  margin: 10px 0;
+  margin: 12px 0;
 }
 
 .special-tag {
@@ -1275,19 +1471,131 @@ export default {
   margin-top: 15px;
 }
 
-/* 捐赠表单容器 */
-.donate-form-container {
-  margin-top: 30px;
+.action-btn {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.custom-tag {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* 区域通用样式 */
+.section-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(171, 240, 209, 0.3);
+  box-shadow: 5px 3px 10px rgba(0, 0, 0, 0.07);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  transition: all 0.35s ease;
+}
+
+.section-box:hover {
+  box-shadow: 6px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #5a6a5a;
+  margin: 0;
 }
 
 .donate-form {
   padding: 10px 0;
 }
 
+/* 表格样式 */
+.custom-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.custom-table >>> th {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.2), rgba(212, 238, 167, 0.2));
+  color: #5a6a5a;
+  font-weight: 600;
+  border: none;
+}
+
+.custom-table >>> td {
+  color: #6a7a6a;
+  border-color: rgba(171, 240, 209, 0.15);
+}
+
+.custom-table >>> .el-table__row:hover > td {
+  background: rgba(171, 240, 209, 0.08);
+}
+
+/* 分页器样式 */
+.custom-pagination >>> .el-pager li {
+  border-radius: 8px;
+  margin: 0 4px;
+  font-weight: 500;
+}
+
+.custom-pagination >>> .el-pager li.active {
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  color: #4a6a5a;
+}
+
+.custom-pagination >>> .btn-prev,
+.custom-pagination >>> .btn-next {
+  border-radius: 8px;
+}
+
+/* 空数据 */
 .empty-data {
   text-align: center;
   padding: 60px 20px;
-  color: #909399;
+  color: #8a9a8a;
   font-size: 16px;
+  font-weight: 500;
+}
+
+/* 弹窗样式 */
+.custom-dialog >>> .el-dialog__header {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
+  border-radius: 4px 4px 0 0;
+}
+
+.custom-dialog >>> .el-dialog__title {
+  color: #5a6a5a;
+  font-weight: 700;
+}
+
+/* 优化滚动条 */
+.book-drift-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.book-drift-container::-webkit-scrollbar-track {
+  background: rgba(171, 240, 209, 0.1);
+  border-radius: 4px;
+}
+
+.book-drift-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  border-radius: 4px;
+}
+
+.book-drift-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #8ce0c0 0%, #c4e897 100%);
 }
 </style>

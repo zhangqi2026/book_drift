@@ -1,5 +1,17 @@
 <template>
   <div class="admin-home-container">
+    <!-- 粒子背景 -->
+    <div class="particles-bg">
+      <div v-for="i in 30" :key="i" class="particle" :style="getParticleStyle(i)"></div>
+    </div>
+    
+    <!-- 装饰性背景元素 -->
+    <div class="bg-decoration">
+      <div class="circle circle-1"></div>
+      <div class="circle circle-2"></div>
+      <div class="grid-lines"></div>
+    </div>
+    
     <!-- 管理员左侧导航栏 -->
     <div class="sidebar admin-sidebar">
       <div class="logo">
@@ -133,6 +145,19 @@ export default {
     this.getAdminInfo()
   },
   methods: {
+    getParticleStyle(index) {
+      const size = Math.random() * 4 + 2
+      const duration = Math.random() * 20 + 10
+      const delay = Math.random() * 10
+      return {
+        width: `${size}px`,
+        height: `${size}px`,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animationDuration: `${duration}s`,
+        animationDelay: `${delay}s`
+      }
+    },
     switchTab(tab) {
       this.activeTab = tab
     },
@@ -160,9 +185,112 @@ html, body, #__nuxt, #__layout, .admin-home-container {
   padding: 0;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .admin-home-container {
-  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fef9f0 0%, #f5f0e6 50%, #e8f5e2 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 粒子背景 */
+.particles-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 100%;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: radial-gradient(circle, #abf0d1, #d4eea7);
+  border-radius: 50%;
+  box-shadow: 0 0 10px #abf0d1, 0 0 20px #d4eea7;
+  animation: particleFloat linear infinite;
+  pointer-events: none;
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* 装饰性背景元素 */
+.bg-decoration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
+  border: 1px solid rgba(171, 240, 209, 0.2);
+  box-shadow: 0 0 40px rgba(171, 240, 209, 0.15), inset 0 0 40px rgba(171, 240, 209, 0.08);
+  animation: float 12s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 300px;
+  height: 300px;
+  bottom: -50px;
+  left: -50px;
+  animation-delay: 3s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translateY(-30px) rotate(180deg) scale(1.03);
+  }
+}
+
+.grid-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(171, 240, 209, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(171, 240, 209, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
 }
 
 /* 侧边栏通用样式 */
@@ -284,6 +412,28 @@ html, body, #__nuxt, #__layout, .admin-home-container {
   margin-left: 220px;
   padding: 20px;
   overflow-y: auto;
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+}
+
+/* 优化滚动条 */
+.admin-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-content::-webkit-scrollbar-track {
+  background: rgba(171, 240, 209, 0.1);
+  border-radius: 4px;
+}
+
+.admin-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  border-radius: 4px;
+}
+
+.admin-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #8ce0c0 0%, #c4e897 100%);
 }
 
 h1 {

@@ -1,35 +1,46 @@
 <template>
   <div class="admin-feedback">
-    <h2>用户反馈管理</h2>
-    <el-card class="feedback-card">
-      <div slot="header" class="card-header">
-        <span>所有反馈</span>
+    <!-- 顶部欢迎区域 -->
+    <div class="welcome-section">
+      <div class="welcome-box slide-in">
+        <h1 class="welcome-title">
+          <span class="title-glow">用户反馈管理</span>
+        </h1>
+        <p class="welcome-subtitle">处理和回复用户提交的所有反馈</p>
+      </div>
+    </div>
+    
+    <!-- 反馈列表 -->
+    <div class="section-box">
+      <div class="section-header">
+        <h3 class="section-title">所有反馈</h3>
         <el-pagination
           @current-change="handleCurrentChange"
           :current-page="currentPage"
           :page-size="pageSize"
           layout="total, prev, pager, next, jumper"
           :total="total"
+          class="custom-pagination"
         >
         </el-pagination>
       </div>
-      <el-table :data="feedbackList" stripe v-loading="loading">
+      <el-table :data="feedbackList" stripe v-loading="loading" class="custom-table">
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="username" label="用户" min-width="120" />
         <el-table-column label="反馈内容" min-width="120">
           <template slot-scope="scope">
-            <el-button type="primary" size="small" @click="viewContent(scope.row)">查看内容</el-button>
+            <el-button type="primary" size="small" @click="viewContent(scope.row)" class="action-btn">查看内容</el-button>
           </template>
         </el-table-column>
         <el-table-column label="回复" min-width="100">
           <template slot-scope="scope">
-            <el-tag v-if="scope.row.reply" type="success" size="small">已回复</el-tag>
-            <el-tag v-else type="info" size="small">未回复</el-tag>
+            <el-tag v-if="scope.row.reply" type="success" size="small" class="custom-tag">已回复</el-tag>
+            <el-tag v-else type="info" size="small" class="custom-tag">未回复</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="110">
           <template slot-scope="scope">
-            <el-tag :type="getStatusType(scope.row.status)">
+            <el-tag :type="getStatusType(scope.row.status)" class="custom-tag">
               {{ getStatusText(scope.row.status) }}
             </el-tag>
           </template>
@@ -46,19 +57,19 @@
         </el-table-column>
         <el-table-column label="操作" width="200" align="center">
           <template slot-scope="scope">
-            <el-button type="primary" size="small" @click="openStatusDialog(scope.row)">更改状态</el-button>
-            <el-button type="success" size="small" @click="openReplyDialog(scope.row)">回复</el-button>
+            <el-button type="primary" size="small" @click="openStatusDialog(scope.row)" class="action-btn">更改状态</el-button>
+            <el-button type="success" size="small" @click="openReplyDialog(scope.row)" class="action-btn">回复</el-button>
           </template>
         </el-table-column>
       </el-table>
       <div v-if="feedbackList.length === 0 && !loading" class="empty-data">暂无反馈记录</div>
-    </el-card>
+    </div>
 
-    <el-dialog title="反馈内容详情" :visible.sync="contentDialogVisible" width="50%">
+    <el-dialog title="反馈内容详情" :visible.sync="contentDialogVisible" width="50%" class="custom-dialog">
       <div class="feedback-content">
         <p><strong>用户：</strong>{{ currentFeedback.username }}</p>
         <p><strong>提交时间：</strong>{{ formatDateTime(currentFeedback.createTime) }}</p>
-        <p><strong>状态：</strong><el-tag :type="getStatusType(currentFeedback.status)">{{ getStatusText(currentFeedback.status) }}</el-tag></p>
+        <p><strong>状态：</strong><el-tag :type="getStatusType(currentFeedback.status)" class="custom-tag">{{ getStatusText(currentFeedback.status) }}</el-tag></p>
         <el-divider></el-divider>
         <p><strong>反馈内容：</strong></p>
         <div class="content-text">{{ currentFeedback.content }}</div>
@@ -66,18 +77,18 @@
           <el-divider></el-divider>
           <p><strong>管理员回复：</strong></p>
           <div class="content-text reply-text">{{ currentFeedback.reply }}</div>
-          <p style="margin-top: 10px; color: #909399; font-size: 12px;">回复时间：{{ formatDateTime(currentFeedback.replyTime) }}</p>
+          <p style="margin-top: 10px; color: #8a9a8a; font-size: 12px;">回复时间：{{ formatDateTime(currentFeedback.replyTime) }}</p>
         </div>
       </div>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="contentDialogVisible = false">关闭</el-button>
+        <el-button @click="contentDialogVisible = false" class="action-btn">关闭</el-button>
       </span>
     </el-dialog>
 
-    <el-dialog title="更改反馈状态" :visible.sync="statusDialogVisible" width="400px">
+    <el-dialog title="更改反馈状态" :visible.sync="statusDialogVisible" width="400px" class="custom-dialog">
       <el-form :model="statusForm" label-width="80px">
         <el-form-item label="当前状态">
-          <el-tag :type="getStatusType(currentStatusFeedback.status)">{{ getStatusText(currentStatusFeedback.status) }}</el-tag>
+          <el-tag :type="getStatusType(currentStatusFeedback.status)" class="custom-tag">{{ getStatusText(currentStatusFeedback.status) }}</el-tag>
         </el-form-item>
         <el-form-item label="新状态">
           <el-select v-model="statusForm.newStatus" placeholder="请选择新状态" style="width: 100%">
@@ -88,12 +99,12 @@
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="statusDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmUpdateStatus">确定</el-button>
+        <el-button @click="statusDialogVisible = false" class="action-btn">取消</el-button>
+        <el-button type="primary" @click="confirmUpdateStatus" class="action-btn">确定</el-button>
       </span>
     </el-dialog>
 
-    <el-dialog title="回复反馈" :visible.sync="replyDialogVisible" width="500px">
+    <el-dialog title="回复反馈" :visible.sync="replyDialogVisible" width="500px" class="custom-dialog">
       <el-form :model="replyForm" label-width="80px">
         <el-form-item label="当前回复" v-if="currentReplyFeedback.reply">
           <div class="content-text">{{ currentReplyFeedback.reply }}</div>
@@ -108,8 +119,8 @@
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="replyDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmReply">确定回复</el-button>
+        <el-button @click="replyDialogVisible = false" class="action-btn">取消</el-button>
+        <el-button type="primary" @click="confirmReply" class="action-btn">确定回复</el-button>
       </span>
     </el-dialog>
   </div>
@@ -265,29 +276,188 @@ export default {
 
 <style scoped>
 .admin-feedback {
-  padding: 20px;
+  position: relative;
+  z-index: 10;
 }
 
-h2 {
-  color: #303133;
+.slide-in {
+  animation: slideIn 0.6s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 欢迎区域 */
+.welcome-section {
   margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #ebeef5;
 }
 
-.card-header {
+.welcome-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(171, 240, 209, 0.4);
+  box-shadow: 5px 3px 10px rgba(0, 0, 0, 0.07);
+  padding: 20px 28px;
+  text-align: center;
+  position: relative;
+}
+
+.welcome-box::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #abf0d1, #d4eea7, #fef1d1, #abf0d1);
+  border-radius: 20px;
+  z-index: -1;
+  background-size: 400% 400%;
+  animation: borderGlow 4s ease infinite;
+  opacity: 0.5;
+}
+
+@keyframes borderGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.welcome-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+}
+
+.title-glow {
+  background: linear-gradient(135deg, #6b9a8a 0%, #7a9d5a 50%, #c4a77a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome-subtitle {
+  font-size: 14px;
+  color: #8a9a8a;
+  margin: 0 0 15px 0;
+}
+
+/* 区域通用样式 */
+.section-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(171, 240, 209, 0.3);
+  box-shadow: 5px 3px 10px rgba(0, 0, 0, 0.07);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  transition: all 0.35s ease;
+}
+
+.section-box:hover {
+  box-shadow: 6px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 18px;
 }
 
-.feedback-card {
-  margin-top: 20px;
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #5a6a5a;
+  margin: 0;
+}
+
+/* 表格样式 */
+.custom-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.custom-table >>> th {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.2), rgba(212, 238, 167, 0.2));
+  color: #5a6a5a;
+  font-weight: 600;
+  border: none;
+}
+
+.custom-table >>> td {
+  color: #6a7a6a;
+  border-color: rgba(171, 240, 209, 0.15);
+}
+
+.custom-table >>> .el-table__row:hover > td {
+  background: rgba(171, 240, 209, 0.08);
+}
+
+/* 分页器样式 */
+.custom-pagination >>> .el-pager li {
+  border-radius: 8px;
+  margin: 0 4px;
+  font-weight: 500;
+}
+
+.custom-pagination >>> .el-pager li.active {
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  color: #4a6a5a;
+}
+
+.custom-pagination >>> .btn-prev,
+.custom-pagination >>> .btn-next {
+  border-radius: 8px;
+}
+
+/* 按钮样式 */
+.action-btn {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* 标签样式 */
+.custom-tag {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* 弹窗样式 */
+.custom-dialog >>> .el-dialog__header {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
+  border-radius: 4px 4px 0 0;
+}
+
+.custom-dialog >>> .el-dialog__title {
+  color: #5a6a5a;
+  font-weight: 700;
 }
 
 .empty-data {
   text-align: center;
-  color: #909399;
+  color: #8a9a8a;
   padding: 20px;
 }
 
@@ -298,20 +468,22 @@ h2 {
 .feedback-content p {
   margin: 10px 0;
   line-height: 1.6;
+  color: #6a7a6a;
 }
 
 .content-text {
   padding: 15px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
+  border-radius: 8px;
   margin-top: 10px;
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.8;
+  color: #5a6a5a;
 }
 
 .reply-text {
-  background-color: #e6f7ff;
-  border-left: 4px solid #1890ff;
+  background: rgba(171, 240, 209, 0.2);
+  border-left: 4px solid #abf0d1;
 }
 </style>

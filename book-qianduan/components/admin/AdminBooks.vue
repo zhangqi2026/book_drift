@@ -1,142 +1,165 @@
 <template>
   <div class="admin-books">
-    <div class="page-header">
-      <h2>书籍大厅</h2>
+    <!-- 顶部欢迎区域 -->
+    <div class="welcome-section">
+      <div class="welcome-box slide-in">
+        <h1 class="welcome-title">
+          <span class="title-glow">书籍大厅管理</span>
+        </h1>
+        <p class="welcome-subtitle">管理系统中的所有漂流书籍</p>
+      </div>
     </div>
     
     <!-- 搜索栏 -->
-    <div class="search-bar">
-      <el-input
-        v-model="searchKeyword"
-        placeholder="请输入书籍名称搜索"
-        style="width: 300px"
-        clearable
-        @clear="handleSearch"
-      >
-        <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
-      </el-input>
+    <div class="section-box search-section">
+      <div class="section-header">
+        <h3 class="section-title">搜索书籍</h3>
+      </div>
+      <div class="search-bar">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="请输入书籍名称搜索"
+          class="search-input"
+          style="width: 350px"
+          clearable
+          @clear="handleSearch"
+        >
+          <el-button slot="append" icon="el-icon-search" @click="handleSearch" class="search-btn"></el-button>
+        </el-input>
+      </div>
     </div>
     
     <!-- 书籍列表 -->
-    <el-table
-      :data="bookList"
-      border
-      stripe
-      class="book-list-table"
-      :empty-text="`暂无书籍`"
-      v-loading="loading"
-    >
-      <el-table-column
-        label="编号"
-        width="80"
+    <div class="section-box">
+      <div class="section-header">
+        <h3 class="section-title">书籍列表</h3>
+      </div>
+      <el-table
+        :data="bookList"
+        border
+        stripe
+        class="book-list-table custom-table"
+        :empty-text="`暂无书籍`"
+        v-loading="loading"
       >
-        <template slot-scope="scope">
-          {{ scope.$index + 1 + (currentPage - 1) * pageSize }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="bookName"
-        label="书籍名称"
-        min-width="180"
-      />
-      <el-table-column
-        prop="author"
-        label="作者"
-        width="120"
-      />
-      <el-table-column
-        prop="donorName"
-        label="捐赠人"
-        width="100"
+        <el-table-column
+          label="编号"
+          width="80"
+        >
+          <template slot-scope="scope">
+            {{ scope.$index + 1 + (currentPage - 1) * pageSize }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="bookName"
+          label="书籍名称"
+          min-width="180"
+        />
+        <el-table-column
+          prop="author"
+          label="作者"
+          width="120"
+        />
+        <el-table-column
+          prop="donorName"
+          label="捐赠人"
+          width="100"
+        >
+          <template slot-scope="scope">
+            {{ scope.row.donorName || '匿名捐赠者' }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="标签"
+          min-width="200"
+        >
+          <template slot-scope="scope">
+            <el-tag
+              v-for="tag in scope.row.tags"
+              :key="tag.id"
+              size="small"
+              class="custom-tag"
+              style="margin-right: 5px; margin-bottom: 5px;"
+            >
+              {{ tag.tagName }}
+            </el-tag>
+            <span v-if="!scope.row.tags || scope.row.tags.length === 0" style="color: #8a9a8a;">暂无标签</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="状态"
+          width="100"
+        >
+          <template slot-scope="scope">
+            <el-tag :type="getStatusType(scope.row.bookStatus)" class="custom-tag">
+              {{ getStatusText(scope.row.bookStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="480"
+        >
+          <template slot-scope="scope">
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+              <el-button
+                type="primary"
+                size="mini"
+                @click="viewClaimRecords(scope.row)"
+                class="action-btn"
+              >
+                查看轨迹
+              </el-button>
+              <el-button
+                type="success"
+                size="mini"
+                @click="viewBookNotes(scope.row)"
+                class="action-btn"
+              >
+                查看读书笔记
+              </el-button>
+              <el-button
+                type="info"
+                size="mini"
+                @click="bindTags(scope.row)"
+                class="action-btn"
+              >
+                绑定标签
+              </el-button>
+              <el-button
+                type="warning"
+                size="mini"
+                @click="editBook(scope.row)"
+                class="action-btn"
+              >
+                编辑
+              </el-button>
+              <el-button
+                type="danger"
+                size="mini"
+                @click="deleteBook(scope.row.id)"
+                class="action-btn"
+              >
+                删除
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+      
+      <!-- 分页 -->
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="currentPage"
+        :page-sizes="[10, 20, 50]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        class="pagination-box custom-pagination"
       >
-        <template slot-scope="scope">
-          {{ scope.row.donorName || '匿名捐赠者' }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="标签"
-        min-width="200"
-      >
-        <template slot-scope="scope">
-          <el-tag
-            v-for="tag in scope.row.tags"
-            :key="tag.id"
-            size="small"
-            style="margin-right: 5px; margin-bottom: 5px;"
-          >
-            {{ tag.tagName }}
-          </el-tag>
-          <span v-if="!scope.row.tags || scope.row.tags.length === 0" style="color: #909399;">暂无标签</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="状态"
-        width="100"
-      >
-        <template slot-scope="scope">
-          <el-tag :type="getStatusType(scope.row.bookStatus)">
-            {{ getStatusText(scope.row.bookStatus) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="操作"
-        width="480"
-      >
-        <template slot-scope="scope">
-          <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-            <el-button
-              type="primary"
-              size="mini"
-              @click="viewClaimRecords(scope.row)"
-            >
-              查看轨迹
-            </el-button>
-            <el-button
-              type="success"
-              size="mini"
-              @click="viewBookNotes(scope.row)"
-            >
-              查看读书笔记
-            </el-button>
-            <el-button
-              type="info"
-              size="mini"
-              @click="bindTags(scope.row)"
-            >
-              绑定标签
-            </el-button>
-            <el-button
-              type="warning"
-              size="mini"
-              @click="editBook(scope.row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              type="danger"
-              size="mini"
-              @click="deleteBook(scope.row.id)"
-            >
-              删除
-            </el-button>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-    
-    <!-- 分页 -->
-    <el-pagination
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      :current-page="currentPage"
-      :page-sizes="[10, 20, 50]"
-      :page-size="pageSize"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      class="pagination-box"
-    >
-    </el-pagination>
+      </el-pagination>
+    </div>
     
     <!-- 编辑书籍弹窗 -->
     <el-dialog
@@ -144,6 +167,7 @@
       :visible.sync="bookDialogVisible"
       width="500px"
       @close="closeBookDialog"
+      class="custom-dialog"
     >
       <el-form :model="bookForm" :rules="bookRules" ref="bookFormRef" label-width="100px">
         <el-form-item label="书籍名称" prop="bookName">
@@ -163,7 +187,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="saveBook">保存</el-button>
+          <el-button type="primary" @click="saveBook" class="action-btn">保存</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -174,11 +198,12 @@
       :visible.sync="recordDialogVisible"
       width="900px"
       @close="closeRecordDialog"
+      class="custom-dialog"
     >
       <div v-if="currentBook">
-        <div class="book-info-header" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 5px;">
-          <h4 style="margin: 0 0 10px 0; color: #409EFF;">《{{ currentBook.bookName || '未知书籍' }}》</h4>
-          <p style="margin: 5px 0; color: #606266;">作者：{{ currentBook.author || '未知' }}</p>
+        <div class="book-info-header" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15)); border-radius: 12px;">
+          <h4 style="margin: 0 0 10px 0; color: #5a6a5a; font-weight: 700;">《{{ currentBook.bookName || '未知书籍' }}》</h4>
+          <p style="margin: 5px 0; color: #6a7a6a;">作者：{{ currentBook.author || '未知' }}</p>
         </div>
         
         <el-table
@@ -186,6 +211,7 @@
           border
           stripe
           :empty-text="'暂无借阅记录'"
+          class="custom-table"
         >
           <el-table-column
             prop="claimerName"
@@ -219,7 +245,7 @@
             width="100"
           >
             <template slot-scope="scope">
-              <el-tag :type="scope.row.returnTime ? 'success' : 'warning'">
+              <el-tag :type="scope.row.returnTime ? 'success' : 'warning'" class="custom-tag">
                 {{ scope.row.returnTime ? '已归还' : '借阅中' }}
               </el-tag>
             </template>
@@ -234,6 +260,7 @@
           layout="total, prev, pager, next, jumper"
           :total="trailTotal"
           style="margin-top: 15px; text-align: right;"
+          class="custom-pagination"
         />
       </div>
     </el-dialog>
@@ -244,8 +271,9 @@
       :visible.sync="notesDialogVisible"
       width="900px"
       @close="closeNotesDialog"
+      class="custom-dialog"
     >
-      <el-table :data="bookNotes" border stripe>
+      <el-table :data="bookNotes" border stripe class="custom-table">
         <el-table-column
           prop="userName"
           label="笔记作者"
@@ -283,6 +311,7 @@
               type="warning"
               size="mini"
               @click="editNote(scope.row)"
+              class="action-btn"
             >
               编辑
             </el-button>
@@ -290,6 +319,7 @@
               type="danger"
               size="mini"
               @click="deleteNote(scope.row.id)"
+              class="action-btn"
             >
               删除
             </el-button>
@@ -304,6 +334,7 @@
         layout="total, prev, pager, next, jumper"
         :total="notesTotal"
         style="text-align: right; margin-top: 20px;"
+        class="custom-pagination"
       />
     </el-dialog>
 
@@ -313,6 +344,7 @@
       :visible.sync="noteFormDialogVisible"
       width="600px"
       @close="closeNoteFormDialog"
+      class="custom-dialog"
     >
       <el-form
         :model="noteForm"
@@ -332,8 +364,8 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="noteFormDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="submitNoteForm" :loading="submitting">确 定</el-button>
+        <el-button @click="noteFormDialogVisible = false" class="action-btn">取 消</el-button>
+        <el-button type="primary" @click="submitNoteForm" :loading="submitting" class="action-btn">确 定</el-button>
       </div>
     </el-dialog>
     
@@ -343,6 +375,7 @@
       :visible.sync="bindTagsDialogVisible"
       width="600px"
       @close="closeBindTagsDialog"
+      class="custom-dialog"
     >
       <div class="tags-select-container">
         <el-checkbox-group v-model="selectedTagIds">
@@ -356,13 +389,13 @@
             <span v-if="tag.description" style="color: #909399; font-size: 12px;">- {{ tag.description }}</span>
           </el-checkbox>
         </el-checkbox-group>
-        <div v-if="allTags.length === 0" style="text-align: center; padding: 40px; color: #909399;">
+        <div v-if="allTags.length === 0" style="text-align: center; padding: 40px; color: #8a9a8a;">
           暂无可用标签，请先在标签管理中创建标签
         </div>
       </div>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="bindTagsDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="submitBindTags" :loading="bindingTags">确 定</el-button>
+        <el-button @click="bindTagsDialogVisible = false" class="action-btn">取 消</el-button>
+        <el-button type="primary" @click="submitBindTags" :loading="bindingTags" class="action-btn">确 定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -585,6 +618,7 @@ export default {
     // 处理轨迹分页
     async handleTrailPageChange(val) {
       this.trailCurrentPage = val
+      // 重新加载当前书籍的轨迹记录
       if (this.currentBook && this.currentBook.id) {
         await this.viewClaimRecords(this.currentBook)
       }
@@ -771,30 +805,219 @@ export default {
 
 <style scoped>
 .admin-books {
-  padding: 20px;
+  position: relative;
+  z-index: 10;
 }
 
-.page-header {
+.slide-in {
+  animation: slideIn 0.6s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 欢迎区域 */
+.welcome-section {
+  margin-bottom: 20px;
+}
+
+.welcome-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(171, 240, 209, 0.4);
+  box-shadow: 5px 3px 10px rgba(0, 0, 0, 0.07);
+  padding: 20px 28px;
+  text-align: center;
+  position: relative;
+}
+
+.welcome-box::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #abf0d1, #d4eea7, #fef1d1, #abf0d1);
+  border-radius: 20px;
+  z-index: -1;
+  background-size: 400% 400%;
+  animation: borderGlow 4s ease infinite;
+  opacity: 0.5;
+}
+
+@keyframes borderGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.welcome-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+}
+
+.title-glow {
+  background: linear-gradient(135deg, #6b9a8a 0%, #7a9d5a 50%, #c4a77a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome-subtitle {
+  font-size: 14px;
+  color: #8a9a8a;
+  margin: 0 0 15px 0;
+}
+
+/* 区域通用样式 */
+.section-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(171, 240, 209, 0.3);
+  box-shadow: 5px 3px 10px rgba(0, 0, 0, 0.07);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  transition: all 0.35s ease;
+}
+
+.section-box:hover {
+  box-shadow: 6px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
-.page-header h2 {
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #5a6a5a;
   margin: 0;
-  color: #303133;
+}
+
+/* 搜索区域 */
+.search-section {
+  padding: 16px 24px;
 }
 
 .search-bar {
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
+.search-input >>> .el-input__inner {
+  border-radius: 8px 0 0 8px;
+  border-color: rgba(171, 240, 209, 0.5);
+}
+
+.search-btn {
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  border: none;
+  color: #4a6a5a;
+  transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(171, 240, 209, 0.4);
+}
+
+/* 表格样式 */
 .book-list-table {
   margin-bottom: 20px;
 }
 
+.custom-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.custom-table >>> th {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.2), rgba(212, 238, 167, 0.2));
+  color: #5a6a5a;
+  font-weight: 600;
+  border: none;
+}
+
+.custom-table >>> td {
+  color: #6a7a6a;
+  border-color: rgba(171, 240, 209, 0.15);
+}
+
+.custom-table >>> .el-table__row:hover > td {
+  background: rgba(171, 240, 209, 0.08);
+}
+
+/* 分页器样式 */
 .pagination-box {
   text-align: right;
+}
+
+.custom-pagination >>> .el-pager li {
+  border-radius: 8px;
+  margin: 0 4px;
+  font-weight: 500;
+}
+
+.custom-pagination >>> .el-pager li.active {
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  color: #4a6a5a;
+}
+
+.custom-pagination >>> .btn-prev,
+.custom-pagination >>> .btn-next {
+  border-radius: 8px;
+}
+
+/* 按钮样式 */
+.action-btn {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* 标签样式 */
+.custom-tag {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* 弹窗样式 */
+.custom-dialog >>> .el-dialog__header {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
+  border-radius: 4px 4px 0 0;
+}
+
+.custom-dialog >>> .el-dialog__title {
+  color: #5a6a5a;
+  font-weight: 700;
 }
 </style>
