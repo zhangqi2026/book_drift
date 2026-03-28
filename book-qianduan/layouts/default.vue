@@ -62,6 +62,12 @@
           </nuxt-link>
         </li>
         <li class="nav-item">
+          <nuxt-link to="/user/ai-chat" class="nav-link">
+            <i class="el-icon-service"></i>
+            <span>AI 问答</span>
+          </nuxt-link>
+        </li>
+        <li class="nav-item">
           <a href="#" class="nav-link" @click.prevent="handleLogout">
             <i class="el-icon-switch-button"></i>
             <span>退出登录</span>
