@@ -134,10 +134,9 @@ public class AiChatController {
             aiChat.setUserId(request.getUserId());
             aiChat.setSessionId(request.getSessionId());
             aiChat.setRole("assistant");
-            String filteredAnswer = filterEmoji(request.getAnswer());
-            aiChat.setContent(filteredAnswer);
+            aiChat.setContent(request.getAnswer());
             aiChat.setCreateTime(now);
-            System.out.println("保存AI消息（过滤后）：" + JSON.toJSONString(aiChat));
+            System.out.println("保存AI消息：" + JSON.toJSONString(aiChat));
             boolean aiSaved = aiChatService.save(aiChat);
             System.out.println("AI消息保存结果：" + aiSaved);
 
