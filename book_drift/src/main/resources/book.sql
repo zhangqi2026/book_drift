@@ -209,7 +209,6 @@ CREATE TABLE `book_tag_relation`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '书籍标签关联表' ROW_FORMAT = Compact;
 
 -- ----------------------------
-<<<<<<< HEAD
 -- Table structure for announcement
 -- ----------------------------
 DROP TABLE IF EXISTS `announcement`;
@@ -241,7 +240,8 @@ CREATE TABLE `announcement_read`  (
   INDEX `idx_user_id`(`user_id`) USING BTREE,
   INDEX `idx_announcement_id`(`announcement_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '公告阅读记录表' ROW_FORMAT = Compact;
-=======
+
+-- ----------------------------
 -- Table structure for ai_chat
 -- ----------------------------
 DROP TABLE IF EXISTS `ai_chat`;
@@ -256,6 +256,5 @@ CREATE TABLE `ai_chat`  (
   INDEX `idx_user_id`(`user_id`) USING BTREE,
   INDEX `idx_session_id`(`session_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = 'AI 问答记录表' ROW_FORMAT = Compact;
->>>>>>> extreaf_01
 
 SET FOREIGN_KEY_CHECKS = 1;
