@@ -13,7 +13,7 @@
         </div>
         <div class="user-details">
           <span class="user-name">{{ currentUser.name || '未登录' }}</span>
-          <span class="user-college">{{ currentUser.college || '' }}</span>
+          <span class="user-college">普通用户</span>
         </div>
       </div>
 
@@ -226,6 +226,36 @@ export default {
 </script>
 
 <style>
+/* ==========================================
+   强制初始样式 - 确保菜单项初始为深绿色
+   ========================================== */
+.sidebar .nav-link:not(:hover):not(.nuxt-link-active) {
+  color: #4a7c59 !important;
+}
+
+.sidebar .nav-link:not(:hover):not(.nuxt-link-active) i,
+.sidebar .nav-link:not(:hover):not(.nuxt-link-active) span {
+  color: #4a7c59 !important;
+}
+
+.user-sidebar .nav-link:not(:hover):not(.nuxt-link-active) {
+  color: #4a7c59 !important;
+}
+
+.user-sidebar .nav-link:not(:hover):not(.nuxt-link-active) i,
+.user-sidebar .nav-link:not(:hover):not(.nuxt-link-active) span {
+  color: #4a7c59 !important;
+}
+
+.admin-sidebar .nav-link:not(:hover):not(.nuxt-link-active) {
+  color: #4a7c59 !important;
+}
+
+.admin-sidebar .nav-link:not(:hover):not(.nuxt-link-active) i,
+.admin-sidebar .nav-link:not(:hover):not(.nuxt-link-active) span {
+  color: #4a7c59 !important;
+}
+
 html, body, #__nuxt, #__layout, .app-layout {
   height: 100%;
   margin: 0;
@@ -242,72 +272,145 @@ html, body, #__nuxt, #__layout, .app-layout {
 
 /* 侧边栏通用样式 */
 .sidebar {
-  width: 220px;
-  color: white;
+  width: 240px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
+  position: relative;
   overflow-y: auto;
+  overflow-x: hidden;
   z-index: 1000;
-  box-shadow: 3px 0 8px rgba(0,0,0,0.06);
 }
 
 /* 普通用户侧边栏样式 */
 .user-sidebar {
-  background-color: #545c64;
+  background: linear-gradient(180deg, #fff9e6 0%, #f1f8e9 100%);
 }
 
 /* 管理员侧边栏样式 */
 .admin-sidebar {
-  background-color: #303133;
+  background: linear-gradient(180deg, #f1f8e9 0%, #e8f5e9 100%);
+}
+
+/* ==========================================
+   强制初始样式 - 确保所有菜单项即时生效
+   ========================================== */
+
+/* 强制侧边栏所有 span 标签颜色为 #4a7c59 */
+.sidebar span,
+.user-sidebar span,
+.admin-sidebar span,
+.sidebar .nav-link span,
+.user-sidebar .nav-link span,
+.admin-sidebar .nav-link span,
+.sidebar .user-name,
+.user-sidebar .user-name,
+.admin-sidebar .user-name,
+.sidebar .user-college,
+.user-sidebar .user-college,
+.admin-sidebar .user-college {
+  color: #4a7c59 !important;
+}
+
+/* 普通用户端强制初始样式 */
+.user-sidebar .nav-link {
+  color: #4a7c59 !important;
+}
+
+.user-sidebar .nav-link i {
+  color: #4a7c59 !important;
+}
+
+.user-sidebar .nav-link span {
+  color: #4a7c59 !important;
+}
+
+/* 管理员端强制初始样式 */
+.admin-sidebar .nav-link {
+  color: #4a7c59 !important;
+}
+
+.admin-sidebar .nav-link i {
+  color: #4a7c59 !important;
+}
+
+.admin-sidebar .nav-link span {
+  color: #4a7c59 !important;
+}
+
+/* 管理员端菜单项hover时的颜色统一为 #4a7c59 */
+.admin-sidebar .nav-link:hover:not(.nuxt-link-active) i,
+.admin-sidebar .nav-link:hover:not(.nuxt-link-active) span {
+  color: #4a7c59 !important;
+}
+
+/* 管理员端菜单项选中时的颜色统一为 #4a7c59 */
+.admin-sidebar .nav-link.nuxt-link-active i,
+.admin-sidebar .nav-link.nuxt-link-active span {
+  color: #4a7c59 !important;
+}
+
+/* 管理员端所有状态下颜色都保持 #4a7c59 */
+.admin-sidebar .nav-link:hover i,
+.admin-sidebar .nav-link:hover span,
+.admin-sidebar .nav-link.nuxt-link-active i,
+.admin-sidebar .nav-link.nuxt-link-active span,
+.admin-sidebar .nav-link.nuxt-link-active:hover i,
+.admin-sidebar .nav-link.nuxt-link-active:hover span {
+  color: #4a7c59 !important;
 }
 
 .logo {
-  padding: 20px;
+  padding: 24px 20px;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #e8f5e9;
 }
 
 .logo a {
-  color: white;
-  font-size: 18px;
-  font-weight: bold;
+  color: #4a7c59;
+  font-size: 17px;
+  font-weight: 700;
   text-decoration: none;
+  letter-spacing: 0.3px;
+}
+
+/* 管理员端顶部标题改为深灰色 */
+.admin-sidebar .logo a {
+  color: #5a5a5a;
 }
 
 /* 用户信息样式 */
 .user-info {
-  padding: 20px;
+  padding: 24px 20px;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #e8f5e9;
 }
 
 .user-avatar {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   overflow: hidden;
-  margin: 0 auto 15px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  background-color: #333;
+  margin: 0 auto 14px;
+  border: 3px solid #5cdb95;
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 12px rgba(92, 219, 149, 0.15);
 }
 
 /* 管理员头像样式 */
 .admin-avatar {
-  background-color: #F56C6C;
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  border-color: #f97316;
 }
 
 .avatar-placeholder {
-  color: white;
-  font-size: 36px;
-  font-weight: bold;
+  color: white !important;
+  font-size: 30px;
+  font-weight: 700;
 }
 
 .user-details {
@@ -317,46 +420,174 @@ html, body, #__nuxt, #__layout, .app-layout {
 
 .user-name {
   font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 5px;
+  font-weight: 700;
+  color: #2c5f2d !important;
+  margin-bottom: 4px;
 }
 
 .user-college {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  color: #888 !important;
+}
+
+/* 管理员端用户角色文字改为深绿色 */
+.admin-sidebar .user-college {
+  color: #4a7c59 !important;
 }
 
 /* 导航菜单样式 */
 .nav-menu {
   list-style: none;
   margin: 0;
-  padding: 20px 0;
-}
-
-.nav-item {
-  margin-bottom: 5px;
-}
-
-.nav-link {
-  color: white;
-  text-decoration: none;
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  transition: background-color 0.3s;
-}
-
-.nav-link i {
-  margin-right: 10px;
-  font-size: 18px;
-}
-
-.nav-link span {
+  padding: 16px 12px;
   flex: 1;
 }
 
-.nav-link:hover, .nav-link.nuxt-link-active {
-  background-color: rgba(255, 255, 255, 0.1);
+.nav-item {
+  margin-bottom: 4px;
+}
+
+.nav-link {
+  color: #4a7c59;
+  text-decoration: none;
+  padding: 16px 16px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  line-height: 56px;
+  position: relative;
+}
+
+.nav-link i {
+  margin-right: 14px;
+  font-size: 22px;
+  width: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.nav-link span {
+  font-size: 20px;
+  font-weight: 500;
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+/* 首页等重要菜单项字体稍大 */
+.nav-item:first-child .nav-link span {
+  font-size: 21px;
+  font-weight: 600;
+}
+
+/* 管理员端首页菜单项也应用同样样式 */
+.admin-sidebar .nav-item:first-child .nav-link span {
+  font-size: 21px;
+  font-weight: 600;
+}
+
+/* ==========================================
+   普通用户端导航栏样式（有颜色变化）
+   ========================================== */
+
+/* 普通用户端未选中项 hover 动效 */
+.user-sidebar .nav-link:hover:not(.nuxt-link-active) {
+  background-color: #f0fdf4;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(92, 219, 149, 0.08);
+}
+
+.user-sidebar .nav-link:hover:not(.nuxt-link-active) i,
+.user-sidebar .nav-link:hover:not(.nuxt-link-active) span {
+  color: #5cdb95 !important;
+}
+
+/* 普通用户端选中态特效 */
+.user-sidebar .nav-link.nuxt-link-active {
+  background: linear-gradient(90deg, #e8f5e9 0%, #f1f8e9 100%);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(92, 219, 149, 0.12);
+}
+
+.user-sidebar .nav-link.nuxt-link-active i,
+.user-sidebar .nav-link.nuxt-link-active span {
+  color: #38b000 !important;
+}
+
+/* 普通用户端退出登录按钮特殊样式 */
+.user-sidebar .nav-item:last-child .nav-link {
+  margin-top: 8px;
+  color: #f97316 !important;
+}
+
+.user-sidebar .nav-item:last-child .nav-link i,
+.user-sidebar .nav-item:last-child .nav-link span {
+  color: #f97316 !important;
+}
+
+.user-sidebar .nav-item:last-child .nav-link:hover:not(.nuxt-link-active) {
+  background-color: #fff7ed;
+  color: #ea580c !important;
+}
+
+.user-sidebar .nav-item:last-child .nav-link:hover:not(.nuxt-link-active) i,
+.user-sidebar .nav-item:last-child .nav-link:hover:not(.nuxt-link-active) span {
+  color: #ea580c !important;
+}
+
+/* ==========================================
+   管理员端导航栏样式（颜色统一为 #4a7c59）
+   ========================================== */
+
+/* 管理员端所有状态下背景和交互效果保持，但颜色统一 */
+.admin-sidebar .nav-link:hover:not(.nuxt-link-active) {
+  background-color: #f0fdf4;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(92, 219, 149, 0.08);
+}
+
+.admin-sidebar .nav-link.nuxt-link-active {
+  background: linear-gradient(90deg, #e8f5e9 0%, #f1f8e9 100%);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(92, 219, 149, 0.12);
+}
+
+/* 通用点击反馈（两者共用） */
+.nav-link:active {
+  transform: scale(0.97);
+}
+
+/* 管理员端退出登录按钮颜色统一为 #4a7c59，使用 !important 确保稳定性 */
+.admin-sidebar .nav-item:last-child .nav-link {
+  color: #4a7c59 !important;
+}
+
+.admin-sidebar .nav-item:last-child .nav-link i,
+.admin-sidebar .nav-item:last-child .nav-link span {
+  color: #4a7c59 !important;
+}
+
+.admin-sidebar .nav-item:last-child .nav-link:hover:not(.nuxt-link-active) {
+  color: #4a7c59 !important;
+}
+
+.admin-sidebar .nav-item:last-child .nav-link:hover:not(.nuxt-link-active) i,
+.admin-sidebar .nav-item:last-child .nav-link:hover:not(.nuxt-link-active) span {
+  color: #4a7c59 !important;
+}
+
+/* 普通用户端模块分割线 */
+.user-sidebar .nav-item:nth-child(6) {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 3px solid #a5d6a7;
+}
+
+/* 管理员端模块分割线 */
+.admin-sidebar .nav-item:nth-child(5) {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 3px solid #a5d6a7;
 }
 
 /* 主内容区域样式 */
@@ -364,11 +595,29 @@ html, body, #__nuxt, #__layout, .app-layout {
   flex: 1;
   height: 100vh;
   overflow-y: auto;
-  margin-left: 220px;
+  position: relative;
 }
 
 .main-content.full-width {
   flex: 1;
   margin-left: 0;
+}
+
+/* 侧边栏滚动条美化 */
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(92, 219, 149, 0.2);
+  border-radius: 2px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(92, 219, 149, 0.3);
 }
 </style>
