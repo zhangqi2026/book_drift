@@ -104,4 +104,18 @@ public interface BookInfoService {
      * @param donorId 捐赠人 ID
      */
     void checkAndUnlockDonationMedal(Integer donorId);
+    
+    /**
+     * 通过二维码获取书籍信息
+     * @param bookQrcode 书籍二维码
+     * @return 书籍信息
+     */
+    BookInfoVO getByQrcode(String bookQrcode);
+    
+    /**
+     * 生成书籍二维码图片(Base64格式)
+     * @param bookId 书籍ID
+     * @return Base64编码的二维码图片
+     */
+    String generateQrCodeImage(Integer bookId);
 }

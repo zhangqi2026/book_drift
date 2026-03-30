@@ -1,10 +1,11 @@
 package com.book_drift.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.book_drift.domain.BookClaimRecord;
 import com.book_drift.service.BookClaimRecordService;
+import com.book_drift.service.BookInfoService;
 import com.book_drift.vo.BaseResult;
 import com.book_drift.vo.BookClaimRecordVO;
+import com.book_drift.vo.BookInfoVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -12,11 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
-/**
- * <p>
- * 书籍认领记录控制器
- * </p>
- */
 @RestController
 @RequestMapping("/bookClaimRecord")
 @Api(tags = "书籍认领记录管理")
@@ -24,13 +20,10 @@ public class BookClaimRecordController {
 
     @Resource
     private BookClaimRecordService bookClaimRecordService;
+    
+    @Resource
+    private BookInfoService bookInfoService;
 
-    /**
-     * 认领书籍（借书）
-     * @param bookId 书籍 ID
-     * @param userId 用户 ID
-     * @return 是否成功
-     */
     @PostMapping("/claim/{bookId}/{userId}")
     @ApiOperation("认领书籍（借书）")
     public BaseResult<Boolean> claimBook(
@@ -40,7 +33,6 @@ public class BookClaimRecordController {
             @PathVariable Integer userId) {
         
         try {
-            // 调用 Service 实现借书业务逻辑
             Integer score = bookClaimRecordService.claimBookWithScore(bookId, userId);
             if (score != null) {
                 return BaseResult.ok("借书成功", true).append("score", score);
@@ -52,16 +44,10 @@ public class BookClaimRecordController {
         }
     }
 
-    /**
-     * 归还书籍
-     * @param recordId 借书记录 ID
-     * @return 是否成功
-     */
     @PostMapping("/return/{recordId}")
     @ApiOperation("归还书籍")
     public BaseResult<Boolean> returnBook(@PathVariable Integer recordId) {
         try {
-            // 调用 Service 实现还书业务逻辑
             Integer score = bookClaimRecordService.returnBookWithScore(recordId);
             if (score != null) {
                 return BaseResult.ok("还书成功", true).append("score", score);
@@ -73,11 +59,6 @@ public class BookClaimRecordController {
         }
     }
 
-    /**
-     * 查询书籍的漂流轨迹（历史借阅记录）
-     * @param bookId 书籍 ID
-     * @return 历史记录列表
-     */
     @GetMapping("/history/{bookId}")
     @ApiOperation("查询书籍漂流轨迹")
     public BaseResult<Page<BookClaimRecordVO>> getHistory(
@@ -92,26 +73,67 @@ public class BookClaimRecordController {
         return BaseResult.ok("查询成功", page);
     }
 
-    /**
-     * 分页查询用户的借阅记录
-     * @param size 每页大小
-     * @param current 当前页码
-     * @param userId 用户 ID（可选）
-     * @return 分页结果
-     */
     @PostMapping("/condition/{size}/{current}")
     @ApiOperation("分页查询用户借阅记录")
     public BaseResult<Page<BookClaimRecordVO>> pageQuery(
-            @ApiParam(value = "每页大小", required = true, example = "10")
             @PathVariable("size") int size,
-
-            @ApiParam(value = "当前页码", required = true, example = "1")
             @PathVariable("current") int current,
-
-            @ApiParam(value = "用户 ID（可选）", example = "1")
             @RequestParam(required = false) Integer userId) {
 
         Page<BookClaimRecordVO> page = bookClaimRecordService.pageQuery(current, size, userId);
         return BaseResult.ok("查询成功", page);
+    }
+    
+    @PostMapping("/scan/claim/{bookQrcode}/{userId}")
+    @ApiOperation("扫码借书")
+    public BaseResult<Boolean> scanClaimBook(
+            @PathVariable String bookQrcode,
+            @PathVariable Integer userId) {
+        try {
+            BookInfoVO bookVO = bookInfoService.getByQrcode(bookQrcode);
+            if (bookVO == null) {
+                return BaseResult.error("书籍不存在");
+            }
+            Integer score = bookClaimRecordService.claimBookWithScore(bookVO.getId(), userId);
+            if (score != null) {
+                return BaseResult.ok("借书成功", true).append("score", score).append("bookId", bookVO.getId());
+            } else {
+                return BaseResult.error("借书失败");
+            }
+        } catch (RuntimeException e) {
+            return BaseResult.error(e.getMessage());
+        }
+    }
+    
+    @PostMapping("/scan/return/{bookQrcode}/{userId}")
+    @ApiOperation("扫码还书")
+    public BaseResult<Boolean> scanReturnBook(
+            @PathVariable String bookQrcode,
+            @PathVariable Integer userId) {
+        try {
+            BookInfoVO bookVO = bookInfoService.getByQrcode(bookQrcode);
+            if (bookVO == null) {
+                return BaseResult.error("书籍不存在");
+            }
+            if (bookVO.getBookStatus() != 2) {
+                return BaseResult.error("该书籍未被借阅");
+            }
+            if (bookVO.getCurrentHolderId() == null || !bookVO.getCurrentHolderId().equals(userId)) {
+                return BaseResult.error("当前用户不是书籍持有者");
+            }
+            Page<BookClaimRecordVO> page = bookClaimRecordService.pageQueryByBookId(1, 1, bookVO.getId());
+            if (page.getRecords() == null || page.getRecords().isEmpty()) {
+                return BaseResult.error("没有找到借阅记录");
+            }
+            Integer recordId = page.getRecords().get(0).getId();
+            Integer score = bookClaimRecordService.returnBookWithScore(recordId);
+            if (score != null) {
+                return BaseResult.ok("还书成功", true).append("score", score);
+            } else {
+                return BaseResult.error("还书失败");
+            }
+        } catch (RuntimeException e) {
+            return BaseResult.error(e.getMessage());
+        }
     }
 }

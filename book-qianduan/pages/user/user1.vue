@@ -1482,6 +1482,9 @@ export default {
   transition: all 0.35s ease;
   margin-bottom: 24px;
   overflow: hidden;
+  height: 420px;
+  display: flex;
+  flex-direction: column;
 }
 
 .book-card:hover {
@@ -1507,6 +1510,10 @@ export default {
 .book-info {
   text-align: center;
   padding: 16px 18px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .book-title {
@@ -1517,15 +1524,19 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .book-tags {
   margin: 10px 0;
   min-height: 24px;
+  max-height: 56px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .book-tag {
@@ -1538,6 +1549,7 @@ export default {
   color: #8a9a8a;
   margin: 5px 0;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .book-status-section {
@@ -1546,6 +1558,8 @@ export default {
   justify-content: center;
   gap: 8px;
   margin: 12px 0;
+  min-height: 32px;
+  flex-shrink: 0;
 }
 
 .special-tag {
@@ -1557,7 +1571,9 @@ export default {
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  margin-top: 15px;
+  margin-top: auto;
+  padding-top: 10px;
+  flex-shrink: 0;
 }
 
 .action-btn {
