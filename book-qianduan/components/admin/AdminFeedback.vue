@@ -40,9 +40,9 @@
         </el-table-column>
         <el-table-column prop="status" label="状态" width="110">
           <template slot-scope="scope">
-            <el-tag :type="getStatusType(scope.row.status)" class="custom-tag">
+            <span :class="['status-tag', getStatusClass(scope.row.status)]">
               {{ getStatusText(scope.row.status) }}
-            </el-tag>
+            </span>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="提交时间" width="160">
@@ -69,7 +69,7 @@
       <div class="feedback-content">
         <p><strong>用户：</strong>{{ currentFeedback.username }}</p>
         <p><strong>提交时间：</strong>{{ formatDateTime(currentFeedback.createTime) }}</p>
-        <p><strong>状态：</strong><el-tag :type="getStatusType(currentFeedback.status)" class="custom-tag">{{ getStatusText(currentFeedback.status) }}</el-tag></p>
+        <p><strong>状态：</strong><span :class="['status-tag', getStatusClass(currentFeedback.status)]">{{ getStatusText(currentFeedback.status) }}</span></p>
         <el-divider></el-divider>
         <p><strong>反馈内容：</strong></p>
         <div class="content-text">{{ currentFeedback.content }}</div>
@@ -88,10 +88,10 @@
     <el-dialog title="更改反馈状态" :visible.sync="statusDialogVisible" width="400px" class="custom-dialog">
       <el-form :model="statusForm" label-width="80px">
         <el-form-item label="当前状态">
-          <el-tag :type="getStatusType(currentStatusFeedback.status)" class="custom-tag">{{ getStatusText(currentStatusFeedback.status) }}</el-tag>
+          <span :class="['status-tag', getStatusClass(currentStatusFeedback.status)]">{{ getStatusText(currentStatusFeedback.status) }}</span>
         </el-form-item>
         <el-form-item label="新状态">
-          <el-select v-model="statusForm.newStatus" placeholder="请选择新状态" style="width: 100%">
+          <el-select v-model="statusForm.newStatus" placeholder="请选择新状态" style="width: 100%" class="status-select">
             <el-option label="待处理" value="PENDING" />
             <el-option label="处理中" value="PROCESSED" />
             <el-option label="已关闭" value="CLOSED" />
@@ -237,12 +237,12 @@ export default {
         this.$message.error('回复失败')
       })
     },
-    getStatusType(status) {
+    getStatusClass(status) {
       switch (status) {
-        case 'PENDING': return 'warning'
-        case 'PROCESSED': return 'primary'
-        case 'CLOSED': return 'success'
-        default: return 'info'
+        case 'PENDING': return 'status-pending'
+        case 'PROCESSED': return 'status-processing'
+        case 'CLOSED': return 'status-closed'
+        default: return ''
       }
     },
     getStatusText(status) {
@@ -277,7 +277,6 @@ export default {
 <style scoped>
 .admin-feedback {
   position: relative;
-  z-index: 10;
 }
 
 .slide-in {
@@ -485,5 +484,62 @@ export default {
 .reply-text {
   background: rgba(171, 240, 209, 0.2);
   border-left: 4px solid #abf0d1;
+}
+
+/* 自定义状态标签样式 */
+.status-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.status-pending {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+
+.status-processing {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.status-closed {
+  background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+  color: #616161;
+  border: 1px solid #bdbdbd;
+}
+
+/* 下拉选择框样式 */
+.status-select {
+  width: 100%;
+}
+
+.status-select >>> .el-input__inner {
+  border-radius: 8px !important;
+  border: 1px solid rgba(171, 240, 209, 0.5) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  transition: all 0.3s ease !important;
+}
+
+.status-select >>> .el-input__inner:hover {
+  border-color: rgba(171, 240, 209, 0.8) !important;
+}
+
+.status-select >>> .el-input__inner:focus {
+  border-color: #7a9d5a !important;
+  box-shadow: 0 0 0 3px rgba(171, 240, 209, 0.2) !important;
+}
+
+.status-select >>> .el-input__suffix {
+  transition: all 0.3s ease;
+}
+
+.status-select >>> .el-input__suffix .el-select__caret {
+  color: #7a9d5a;
 }
 </style>

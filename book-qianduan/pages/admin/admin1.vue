@@ -178,17 +178,7 @@ export default {
 }
 </script>
 
-<style>
-html, body, #__nuxt, #__layout, .admin-home-container {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-* {
-  box-sizing: border-box;
-}
-
+<style scoped>
 .admin-home-container {
   width: 100%;
   min-height: 100vh;
@@ -413,7 +403,6 @@ html, body, #__nuxt, #__layout, .admin-home-container {
   padding: 20px;
   overflow-y: auto;
   position: relative;
-  z-index: 10;
   min-height: 100vh;
 }
 
@@ -436,12 +425,15 @@ html, body, #__nuxt, #__layout, .admin-home-container {
   background: linear-gradient(135deg, #8ce0c0 0%, #c4e897 100%);
 }
 
-h1 {
+/* 其他管理端样式 - 使用嵌套选择器避免污染全局 */
+.admin-content >>> h1,
+.admin-content h1 {
   color: #303133;
   margin-bottom: 10px;
 }
 
-p {
+.admin-content >>> p,
+.admin-content p {
   color: #909399;
   margin-bottom: 40px;
 }
@@ -488,7 +480,8 @@ p {
   margin-bottom: 20px;
 }
 
-h2 {
+.admin-content >>> h2,
+.admin-content h2 {
   color: #303133;
   margin: 0;
 }

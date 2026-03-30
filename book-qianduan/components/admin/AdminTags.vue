@@ -247,7 +247,6 @@ export default {
 <style scoped>
 .admin-tags {
   position: relative;
-  z-index: 10;
 }
 
 .slide-in {

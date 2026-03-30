@@ -15,17 +15,32 @@
       <div class="section-header">
         <h3 class="section-title">搜索勋章</h3>
       </div>
-      <div class="search-bar">
-        <el-input
-          v-model="searchUserName"
-          placeholder="请输入用户名查询该用户的勋章"
-          class="search-input"
-          style="width: 350px;"
-          clearable
-          @clear="handleSearch"
-        >
-          <el-button slot="append" icon="el-icon-user" @click="handleSearch" class="search-btn"></el-button>
-        </el-input>
+      <div class="search-bar-wrapper">
+        <div class="search-box">
+          <i class="el-icon-user search-icon"></i>
+          <el-input
+            v-model="searchUserName"
+            placeholder="请输入用户名查询该用户的勋章..."
+            class="search-input"
+            clearable
+            @clear="handleSearch"
+            @keyup.enter="handleSearch"
+          />
+          <el-button 
+            v-if="searchUserName" 
+            icon="el-icon-refresh-left" 
+            @click="resetSearch"
+            class="reset-btn"
+          ></el-button>
+          <el-button 
+            type="primary" 
+            @click="handleSearch"
+            class="search-btn"
+          >
+            <i class="el-icon-search"></i>
+            搜索
+          </el-button>
+        </div>
       </div>
     </div>
     
@@ -149,6 +164,11 @@ export default {
       this.currentPage = 1
       this.fetchMedalList()
     },
+    resetSearch() {
+      this.searchUserName = ''
+      this.currentPage = 1
+      this.fetchMedalList()
+    },
     handleSizeChange(val) {
       this.pageSize = val
       this.currentPage = 1
@@ -198,7 +218,6 @@ export default {
 <style scoped>
 .admin-medals {
   position: relative;
-  z-index: 10;
 }
 
 .slide-in {
@@ -310,31 +329,90 @@ export default {
 
 /* 搜索区域 */
 .search-section {
-  padding: 16px 24px;
+  padding: 20px 24px;
 }
 
-.search-bar {
+.search-bar-wrapper {
+  width: 100%;
+}
+
+.search-box {
   display: flex;
   align-items: center;
-  gap: 15px;
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
+  border: 2px solid rgba(171, 240, 209, 0.4);
+  border-radius: 16px;
+  padding: 8px 16px;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.search-box:focus-within {
+  border-color: rgba(171, 240, 209, 0.8);
+  box-shadow: 0 0 0 4px rgba(171, 240, 209, 0.15);
+}
+
+.search-icon {
+  font-size: 20px;
+  color: #6a9a7a;
+}
+
+.search-input {
+  flex: 1;
 }
 
 .search-input >>> .el-input__inner {
-  border-radius: 8px 0 0 8px;
-  border-color: rgba(171, 240, 209, 0.5);
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  color: #5a6a5a;
+  height: 40px;
+  padding: 0 12px;
+}
+
+.search-input >>> .el-input__inner::placeholder {
+  color: #9aaba;
+}
+
+.search-input >>> .el-input__inner:focus {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.reset-btn {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(171, 240, 209, 0.4);
+  color: #6a9a7a;
+  border-radius: 12px;
+  padding: 0 16px;
+  height: 40px;
+  transition: all 0.3s ease;
+}
+
+.reset-btn:hover {
+  background: rgba(171, 240, 209, 0.2);
+  color: #4a6a5a;
+  transform: translateY(-1px);
 }
 
 .search-btn {
-  border-radius: 0 8px 8px 0;
   background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
   border: none;
   color: #4a6a5a;
+  border-radius: 12px;
+  padding: 0 24px;
+  height: 40px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   transition: all 0.3s ease;
 }
 
 .search-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(171, 240, 209, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(171, 240, 209, 0.4);
 }
 
 /* 表格样式 */

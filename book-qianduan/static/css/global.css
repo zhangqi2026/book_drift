@@ -1,0 +1,67 @@
+/* 全局弹窗遮罩层修复 - Element UI 组件 */
+.el-overlay {
+  z-index: 2999 !important;
+}
+
+.el-dialog__wrapper {
+  z-index: 3000 !important;
+}
+
+.el-dialog {
+  pointer-events: auto !important;
+  z-index: 3001 !important;
+}
+
+.el-dialog__body {
+  pointer-events: auto !important;
+}
+
+.el-form-item {
+  pointer-events: auto !important;
+}
+
+.el-input,
+.el-textarea,
+.el-radio-group,
+.el-radio,
+.el-button,
+.el-select {
+  pointer-events: auto !important;
+}
+
+/* 全局下拉面板修复 */
+.el-select-dropdown {
+  z-index: 3002 !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(171, 240, 209, 0.4) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden;
+}
+
+.el-select-dropdown__wrap {
+  padding: 4px;
+}
+
+.el-select-dropdown__item {
+  border-radius: 8px !important;
+  margin: 2px 4px !important;
+  color: #5a6a5a !important;
+  font-weight: 500 !important;
+  transition: all 0.25s ease !important;
+}
+
+.el-select-dropdown__item:hover {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.3), rgba(212, 238, 167, 0.3)) !important;
+  color: #4a6a5a !important;
+  transform: translateX(4px);
+}
+
+.el-select-dropdown__item.selected {
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.5), rgba(212, 238, 167, 0.5)) !important;
+  color: #4a6a5a !important;
+  font-weight: 600 !important;
+}
+
+.el-popper {
+  z-index: 3002 !important;
+}

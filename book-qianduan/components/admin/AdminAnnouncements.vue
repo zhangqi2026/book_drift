@@ -301,7 +301,6 @@ export default {
 <style scoped>
 .admin-announcements {
   position: relative;
-  z-index: 10;
 }
 
 .slide-in {
@@ -483,6 +482,14 @@ export default {
 }
 
 /* 弹窗样式 */
+.custom-dialog {
+  z-index: 3000 !important;
+}
+
+.custom-dialog >>> .el-dialog {
+  z-index: 3001 !important;
+}
+
 .custom-dialog >>> .el-dialog__header {
   background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
   border-radius: 4px 4px 0 0;

@@ -493,8 +493,6 @@ export default {
   position: relative;
   z-index: 10;
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
   width: 100%;
   overflow-x: hidden;
 }

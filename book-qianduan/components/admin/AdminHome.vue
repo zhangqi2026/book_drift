@@ -385,7 +385,6 @@ export default {
 <style scoped>
 .admin-home {
   position: relative;
-  z-index: 10;
 }
 
 .slide-in {

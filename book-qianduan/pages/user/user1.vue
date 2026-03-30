@@ -13,9 +13,14 @@
     </div>
     
     <div class="content-wrapper">
-      <!-- 页面标题 -->
-      <div class="page-title-section">
-        <h2 class="page-title">校园闲置书籍漂流管理系统</h2>
+      <!-- 顶部欢迎区域 -->
+      <div class="welcome-section">
+        <div class="welcome-box slide-in">
+          <h1 class="welcome-title">
+            <span class="title-glow">书籍大厅</span>
+          </h1>
+          <p class="welcome-subtitle">探索更多精彩书籍，开启知识之旅</p>
+        </div>
       </div>
 
       <!-- 搜索栏 + 标签筛选 + 分页控制区 -->
@@ -1211,8 +1216,7 @@ export default {
   min-height: 100vh;
   background: linear-gradient(135deg, #fef9f0 0%, #f5f0e6 50%, #e8f5e2 100%);
   position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 * {
@@ -1317,41 +1321,101 @@ export default {
 
 .content-wrapper {
   position: relative;
-  z-index: 10;
   padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
   overflow-x: hidden;
 }
 
-/* 页面标题 */
-.page-title-section {
+.slide-in {
+  animation: slideIn 0.6s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 欢迎区域 */
+.welcome-section {
   margin-bottom: 20px;
 }
 
-.page-title {
-  font-size: 22px;
+.welcome-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(171, 240, 209, 0.4);
+  box-shadow: 5px 3px 10px rgba(0, 0, 0, 0.07);
+  padding: 20px 28px;
+  text-align: center;
+  position: relative;
+}
+
+.welcome-box::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #abf0d1, #d4eea7, #fef1d1, #abf0d1);
+  border-radius: 20px;
+  z-index: -1;
+  background-size: 400% 400%;
+  animation: borderGlow 4s ease infinite;
+  opacity: 0.5;
+}
+
+@keyframes borderGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.welcome-title {
+  font-size: 24px;
   font-weight: 800;
-  margin: 0;
+  margin: 0 0 6px 0;
+}
+
+.title-glow {
   background: linear-gradient(135deg, #6b9a8a 0%, #7a9d5a 50%, #c4a77a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* 搜索栏布局 */
+.welcome-subtitle {
+  font-size: 14px;
+  color: #8a9a8a;
+  margin: 0;
+}
+
+/* 搜索栏布局 - 通栏浅绿背景 */
 .search-pagination-bar {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 20px;
   padding: 20px 24px;
-  background: linear-gradient(135deg, rgba(171, 240, 209, 0.25), rgba(212, 238, 167, 0.25));
-  border-radius: 16px;
-  border: 1px solid rgba(171, 240, 209, 0.3);
+  background: linear-gradient(135deg, rgba(171, 240, 209, 0.35), rgba(212, 238, 167, 0.35));
+  border-radius: 20px;
+  border: 1px solid rgba(171, 240, 209, 0.4);
   flex-wrap: wrap;
   gap: 15px;
+  box-shadow: 5px 3px 10px rgba(0, 0, 0, 0.07);
 }
 
 .search-tags-box {
@@ -1366,6 +1430,25 @@ export default {
   gap: 10px;
 }
 
+.search-box >>> .el-input__inner {
+  border-radius: 12px;
+  height: 44px;
+  border: 2px solid rgba(171, 240, 209, 0.5);
+  transition: all 0.3s ease;
+}
+
+.search-box >>> .el-input__inner:focus {
+  border-color: #abf0d1;
+  box-shadow: 0 0 0 3px rgba(171, 240, 209, 0.2);
+}
+
+.search-box >>> .el-button {
+  border-radius: 12px;
+  height: 44px;
+  padding: 0 24px;
+  font-weight: 600;
+}
+
 .tags-filter-box {
   display: flex;
   align-items: center;
@@ -1374,9 +1457,15 @@ export default {
 
 .tags-label {
   font-size: 14px;
-  color: #606266;
+  color: #5a6a5a;
   white-space: nowrap;
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.tags-filter-box >>> .el-input__inner {
+  border-radius: 12px;
+  height: 44px;
+  border: 2px solid rgba(171, 240, 209, 0.5);
 }
 
 /* 书籍卡片列表 */
@@ -1521,6 +1610,25 @@ export default {
   padding: 10px 0;
 }
 
+.donate-form >>> .el-input__inner {
+  border-radius: 12px;
+  height: 44px;
+  border: 2px solid rgba(171, 240, 209, 0.5);
+  transition: all 0.3s ease;
+}
+
+.donate-form >>> .el-input__inner:focus {
+  border-color: #abf0d1;
+  box-shadow: 0 0 0 3px rgba(171, 240, 209, 0.2);
+}
+
+.donate-form >>> .el-button {
+  border-radius: 12px;
+  height: 44px;
+  padding: 0 32px;
+  font-weight: 600;
+}
+
 /* 表格样式 */
 .custom-table {
   border-radius: 12px;
@@ -1532,11 +1640,15 @@ export default {
   color: #5a6a5a;
   font-weight: 600;
   border: none;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .custom-table >>> td {
   color: #6a7a6a;
   border-color: rgba(171, 240, 209, 0.15);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .custom-table >>> .el-table__row:hover > td {
@@ -1569,6 +1681,39 @@ export default {
   font-weight: 500;
 }
 
+/* 弹窗层级修复 - 确保弹窗在最上层 */
+.custom-dialog {
+  z-index: 3001 !important;
+}
+
+.custom-dialog >>> .el-overlay {
+  z-index: 2999 !important;
+}
+
+.custom-dialog >>> .el-dialog__wrapper {
+  z-index: 3000 !important;
+}
+
+.custom-dialog >>> .el-dialog {
+  z-index: 3001 !important;
+  pointer-events: auto !important;
+}
+
+.custom-dialog >>> .el-dialog__body {
+  pointer-events: auto !important;
+}
+
+.custom-dialog >>> .el-form-item {
+  pointer-events: auto !important;
+}
+
+.custom-dialog >>> .el-input,
+.custom-dialog >>> .el-textarea,
+.custom-dialog >>> .el-button,
+.custom-dialog >>> .el-select {
+  pointer-events: auto !important;
+}
+
 /* 弹窗样式 */
 .custom-dialog >>> .el-dialog__header {
   background: linear-gradient(135deg, rgba(171, 240, 209, 0.15), rgba(212, 238, 167, 0.15));
@@ -1580,22 +1725,10 @@ export default {
   font-weight: 700;
 }
 
-/* 优化滚动条 */
-.book-drift-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.book-drift-container::-webkit-scrollbar-track {
-  background: rgba(171, 240, 209, 0.1);
-  border-radius: 4px;
-}
-
-.book-drift-container::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
-  border-radius: 4px;
-}
-
-.book-drift-container::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #8ce0c0 0%, #c4e897 100%);
+.custom-dialog >>> .el-button {
+  border-radius: 12px;
+  height: 40px;
+  padding: 0 24px;
+  font-weight: 600;
 }
 </style>
