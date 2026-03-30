@@ -10,7 +10,7 @@
         <el-card class="chat-card">
           <div slot="header" class="card-header">
             <span>对话界面</span>
-            <el-button type="text" @click="clearChat">清空对话</el-button>
+            <el-button type="text" @click="clearChat">新建对话</el-button>
           </div>
           <div class="card-body">
             <div class="chat-messages" ref="chatMessages">
@@ -264,7 +264,7 @@ export default {
       this.messages = []
       this.currentSessionId = null
       this.addWelcomeMessage()
-      this.$message.success('对话已清空')
+      this.$message.success('已开始新对话')
     },
     addWelcomeMessage() {
       this.messages.push({
@@ -371,6 +371,16 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-card >>> .el-card__body,
+.history-card >>> .el-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
 .card-header {
@@ -385,6 +395,8 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .chat-messages {
