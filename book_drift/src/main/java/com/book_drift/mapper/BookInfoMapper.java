@@ -21,4 +21,12 @@ public interface BookInfoMapper extends BaseMapper<BookInfo> {
      */
     @Select("SELECT * FROM sys_user WHERE id = #{donorId}")
     SysUser getDonorById(Integer donorId);
+    
+    /**
+     * 根据二维码查询书籍
+     * @param bookQrcode 书籍二维码
+     * @return 书籍信息
+     */
+    @Select("SELECT * FROM book_info WHERE book_qrcode = #{bookQrcode}")
+    BookInfo getByQrcode(String bookQrcode);
 }

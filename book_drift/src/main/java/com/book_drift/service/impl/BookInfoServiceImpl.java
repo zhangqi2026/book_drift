@@ -20,6 +20,7 @@ import com.book_drift.service.BookTagService;
 import com.book_drift.service.SysUserService;
 import com.book_drift.service.UserActivityService;
 import com.book_drift.service.UserMedalService;
+import com.book_drift.util.QrCodeUtil;
 import com.book_drift.vo.BookInfoVO;
 import com.book_drift.vo.BookTagVO;
 import org.apache.commons.lang3.StringUtils;
@@ -203,6 +204,9 @@ public class BookInfoServiceImpl extends ServiceImpl<BookInfoMapper, BookInfo> i
 
     @Override
     public Integer saveWithScore(BookInfo bookInfo) {
+        if (bookInfo.getBookQrcode() == null || bookInfo.getBookQrcode().isEmpty()) {
+            bookInfo.setBookQrcode(QrCodeUtil.generateUniqueQrCode());
+        }
         boolean result = super.save(bookInfo);
         Integer score = null;
         
@@ -375,5 +379,26 @@ public class BookInfoServiceImpl extends ServiceImpl<BookInfoMapper, BookInfo> i
                 userMedalService.save(userMedal);
             }
         }
+    }
+    
+    @Override
+    public BookInfoVO getByQrcode(String bookQrcode) {
+        BookInfo bookInfo = this.getBaseMapper().getByQrcode(bookQrcode);
+        if (bookInfo == null) {
+            return null;
+        }
+        BookInfoVO vo = convertToVOWithDonor(bookInfo);
+        List<BookTagVO> tags = bookTagService.getBookTags(bookInfo.getId());
+        vo.setTags(tags);
+        return vo;
+    }
+    
+    @Override
+    public String generateQrCodeImage(Integer bookId) {
+        BookInfo bookInfo = super.getById(bookId);
+        if (bookInfo == null) {
+            return null;
+        }
+        return QrCodeUtil.parseQrCodeBase64(bookInfo.getBookQrcode(), 300, 300);
     }
 }

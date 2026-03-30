@@ -98,10 +98,18 @@
         </el-table-column>
         <el-table-column
           label="操作"
-          width="480"
+          width="540"
         >
           <template slot-scope="scope">
             <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+              <el-button
+                type="info"
+                size="mini"
+                @click="showQrcode(scope.row)"
+                class="action-btn"
+              >
+                查看二维码
+              </el-button>
               <el-button
                 type="primary"
                 size="mini"
@@ -119,7 +127,7 @@
                 查看读书笔记
               </el-button>
               <el-button
-                type="info"
+                type="warning"
                 size="mini"
                 @click="bindTags(scope.row)"
                 class="action-btn"
@@ -398,6 +406,31 @@
         <el-button type="primary" @click="submitBindTags" :loading="bindingTags" class="action-btn">确 定</el-button>
       </div>
     </el-dialog>
+    
+    <!-- 二维码弹窗 -->
+    <el-dialog
+      :title="`《${currentQrBook?.bookName || ''}》的二维码`"
+      :visible.sync="qrDialogVisible"
+      width="450px"
+      @close="closeQrDialog"
+      class="custom-dialog"
+    >
+      <div v-if="currentQrBook" style="text-align: center;">
+        <div style="margin-bottom: 15px;">
+          <p style="color: #6a7a6a; margin: 0;">书籍名称：{{ currentQrBook.bookName }}</p>
+          <p style="color: #8a9a8a; margin: 5px 0 0 0; font-size: 13px;">二维码编号：{{ currentQrBook.bookQrcode }}</p>
+        </div>
+        <div v-if="qrCodeImage" style="margin: 20px 0;">
+          <img :src="'data:image/png;base64,' + qrCodeImage" style="width: 280px; height: 280px; border: 1px solid #e0e0e0; border-radius: 8px;"/>
+        </div>
+        <div v-else style="padding: 40px; color: #8a9a8a;">
+          <i class="el-icon-loading" style="margin-right: 8px;"></i>二维码生成中...
+        </div>
+        <div style="margin-top: 20px;">
+          <el-button type="primary" @click="downloadQrcode" icon="el-icon-download" class="action-btn">下载二维码</el-button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -461,7 +494,11 @@ export default {
       currentBindBook: null,
       allTags: [],
       selectedTagIds: [],
-      bindingTags: false
+      bindingTags: false,
+      // 二维码相关
+      qrDialogVisible: false,
+      currentQrBook: null,
+      qrCodeImage: null
     }
   },
   mounted() {
@@ -798,6 +835,41 @@ export default {
       this.bindTagsDialogVisible = false
       this.currentBindBook = null
       this.selectedTagIds = []
+    },
+    // 查看二维码
+    async showQrcode(book) {
+      this.currentQrBook = book
+      this.qrCodeImage = null
+      this.qrDialogVisible = true
+      try {
+        const response = await this.$axios.get(`/bookInfo/generateQrCode/${book.id}`)
+        if (response.code === 20000 && response.data) {
+          this.qrCodeImage = response.data
+        } else {
+          this.$message.error(response.message || '生成二维码失败')
+        }
+      } catch (error) {
+        this.$message.error('生成二维码失败：' + (error.response?.data?.message || error.message))
+      }
+    },
+    // 关闭二维码弹窗
+    closeQrDialog() {
+      this.qrDialogVisible = false
+      this.currentQrBook = null
+      this.qrCodeImage = null
+    },
+    // 下载二维码
+    downloadQrcode() {
+      if (!this.qrCodeImage) {
+        this.$message.warning('二维码尚未生成')
+        return
+      }
+      const link = document.createElement('a')
+      link.href = 'data:image/png;base64,' + this.qrCodeImage
+      link.download = `${this.currentQrBook.bookName}_二维码.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
     }
   }
 }

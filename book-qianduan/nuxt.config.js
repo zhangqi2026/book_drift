@@ -13,6 +13,9 @@ export default {
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+    ],
+    script: [
+      { src: 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js', body: true }
     ]
   },
 

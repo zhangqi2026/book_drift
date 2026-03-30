@@ -20,6 +20,9 @@
             <span class="title-glow">欢迎回来，{{ currentUser.name }}</span>
           </h1>
           <p class="welcome-subtitle">开启今天的书籍漂流之旅</p>
+          <el-button type="primary" size="medium" @click="showScanner = true" icon="el-icon-camera" class="scan-btn">
+            扫码借书/还书
+          </el-button>
         </div>
       </div>
       
@@ -184,13 +187,27 @@
         </div>
       </div>
     </div>
+    
+    <!-- 扫码组件 -->
+    <qr-scanner
+      :visible="showScanner"
+      :current-user-id="currentUser.id"
+      @close="showScanner = false"
+      @success="handleScanSuccess"
+    />
   </div>
 </template>
 
 <script>
+import QrScanner from '@/components/QrScanner.vue'
+
 export default {
+  components: {
+    QrScanner
+  },
   data() {
     return {
+      showScanner: false,
       currentUser: {
         name: ''
       },
@@ -344,6 +361,9 @@ export default {
         case 3: return '已归还'
         default: return '未知'
       }
+    },
+    handleScanSuccess(action, bookInfo) {
+      this.fetchUserStats()
     }
   }
 }
@@ -541,7 +561,22 @@ export default {
 .welcome-subtitle {
   font-size: 14px;
   color: #8a9a8a;
-  margin: 0;
+  margin: 0 0 15px 0;
+}
+
+.scan-btn {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  border: none;
+  color: #4a6a5a;
+  font-weight: 600;
+  padding: 12px 24px;
+  transition: all 0.3s ease;
+}
+
+.scan-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(171, 240, 209, 0.5);
 }
 
 /* 统计卡片区域 */
@@ -706,7 +741,7 @@ export default {
 .empty-state {
   text-align: center;
   padding: 25px 20px;
-  color: #9aaba;
+  color: #9a9a9a;
 }
 
 .empty-state p {

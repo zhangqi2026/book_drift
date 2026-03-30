@@ -152,4 +152,34 @@ public class BookInfoController {
         }
         return BaseResult.error("删除失败");
     }
+    
+    /**
+     * 通过二维码获取书籍信息
+     * @param bookQrcode 书籍二维码
+     * @return 书籍信息
+     */
+    @GetMapping("/qrcode/{bookQrcode}")
+    @ApiOperation("通过二维码获取书籍信息")
+    public BaseResult<BookInfoVO> getByQrcode(@PathVariable String bookQrcode) {
+        BookInfoVO bookInfo = bookInfoService.getByQrcode(bookQrcode);
+        if (bookInfo == null) {
+            return BaseResult.error("书籍不存在");
+        }
+        return BaseResult.ok("查询成功", bookInfo);
+    }
+    
+    /**
+     * 生成书籍二维码图片(Base64格式)
+     * @param bookId 书籍ID
+     * @return Base64编码的二维码图片
+     */
+    @GetMapping("/generateQrCode/{bookId}")
+    @ApiOperation("生成书籍二维码图片")
+    public BaseResult<String> generateQrCode(@PathVariable Integer bookId) {
+        String qrCodeImage = bookInfoService.generateQrCodeImage(bookId);
+        if (qrCodeImage == null) {
+            return BaseResult.error("生成二维码失败");
+        }
+        return BaseResult.ok("生成成功", qrCodeImage);
+    }
 }
