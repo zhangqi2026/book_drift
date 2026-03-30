@@ -7,4 +7,6 @@ public interface AnnouncementReadService {
     List<Integer> getReadAnnouncementIds(Integer userId);
 
     boolean markAsRead(Integer announcementId, Integer userId);
+
+    Integer countUnreadAnnouncements(Integer userId);
 }

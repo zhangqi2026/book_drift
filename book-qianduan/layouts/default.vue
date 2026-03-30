@@ -9,7 +9,8 @@
       <!-- 用户信息区域 -->
       <div class="user-info">
         <div class="user-avatar">
-          <div class="avatar-placeholder">{{ currentUser.name ? currentUser.name.charAt(0) : '用' }}</div>
+          <img v-if="currentUser.avatar" :src="getAvatarUrl(currentUser.avatar)" class="avatar-img">
+          <div v-else class="avatar-placeholder">{{ currentUser.name ? currentUser.name.charAt(0) : '用' }}</div>
         </div>
         <div class="user-details">
           <span class="user-name">{{ currentUser.name || '未登录' }}</span>
@@ -53,6 +54,7 @@
           <nuxt-link to="/user/announcements" class="nav-link">
             <i class="el-icon-bell"></i>
             <span>公告通知</span>
+            <span v-if="unreadCount > 0" class="unread-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
           </nuxt-link>
         </li>
         <li class="nav-item">
@@ -65,6 +67,12 @@
           <nuxt-link to="/user/ai-chat" class="nav-link">
             <i class="el-icon-service"></i>
             <span>AI 问答</span>
+          </nuxt-link>
+        </li>
+        <li class="nav-item">
+          <nuxt-link to="/user/profile" class="nav-link">
+            <i class="el-icon-user"></i>
+            <span>个人中心</span>
           </nuxt-link>
         </li>
         <li class="nav-item">
@@ -147,19 +155,58 @@ export default {
     return {
       isLoggedIn: false,
       isAdmin: false,
+      unreadCount: 0,
       currentUser: {
         id: null,
         name: '',
         college: '',
         student_id: '',
-        role: '' // 'admin' 或 'user'
+        role: '', // 'admin' 或 'user'
+        avatar: ''
       }
     }
   },
   mounted() {
     this.checkLoginStatus()
+    this.$root.$on('avatar-updated', (avatarUrl) => {
+      this.$set(this.currentUser, 'avatar', avatarUrl)
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        user.avatar = avatarUrl
+        localStorage.setItem('user', JSON.stringify(user))
+      }
+      this.$nextTick(() => {
+        this.$forceUpdate()
+      })
+    })
+  },
+  beforeDestroy() {
+    this.$root.$off('avatar-updated')
   },
   methods: {
+    getAvatarUrl(url) {
+      if (!url) return ''
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url
+      }
+      return process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:10010' + url 
+        : url
+    },
+    async fetchUnreadCount() {
+      if (!this.isLoggedIn || this.isAdmin || !this.currentUser?.id) {
+        return
+      }
+      try {
+        const response = await this.$axios.get(`/announcementRead/unreadCount/${this.currentUser.id}`)
+        if (response.code === 20000) {
+          this.unreadCount = response.data || 0
+        }
+      } catch (error) {
+        console.error('获取未读公告数量失败:', error)
+      }
+    },
     checkLoginStatus() {
       // 检查普通用户登录状态
       const isLoggedIn = localStorage.getItem('isLoggedIn')
@@ -175,6 +222,8 @@ export default {
         if (user) {
           this.currentUser = JSON.parse(user)
           this.currentUser.role = 'user'
+          // 获取未读公告数量
+          this.fetchUnreadCount()
         }
 
         // 如果当前在登录页面，重定向到首页
@@ -218,8 +267,19 @@ export default {
     }
   },
   watch: {
-    '$route'() {
+    '$route'(to, from) {
       this.checkLoginStatus()
+      // 当从公告页面返回时，刷新未读数量
+      if (from.path === '/user/announcements') {
+        this.fetchUnreadCount()
+      }
+      // 当从个人中心返回时，确保用户信息已更新
+      if (from.path === '/user/profile') {
+        const user = localStorage.getItem('user')
+        if (user) {
+          this.currentUser = JSON.parse(user)
+        }
+      }
     }
   }
 }
@@ -413,6 +473,12 @@ html, body, #__nuxt, #__layout, .app-layout {
   font-weight: 700;
 }
 
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .user-details {
   display: flex;
   flex-direction: column;
@@ -472,6 +538,35 @@ html, body, #__nuxt, #__layout, .app-layout {
   font-weight: 500;
   flex: 1;
   transition: all 0.3s ease;
+}
+
+.unread-badge {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: linear-gradient(135deg, #98e6d0 0%, #7dd3c0 100%);
+  color: #2c5f4e;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(125, 211, 192, 0.4);
+  animation: badgePulse 2s ease-in-out infinite;
+  z-index: 10;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
 }
 
 /* 首页等重要菜单项字体稍大 */

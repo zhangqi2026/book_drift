@@ -11,6 +11,10 @@ spring:
     password: 123456
     druid:
       connection-init-sqls: SET NAMES utf8mb4
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   
 #开启log4j打印SQL语句
 logging:
@@ -31,3 +35,8 @@ ai:
   api-key: 密钥
   api-url: https://api.scnet.cn/api/llm/v1
   model: Qwen3-30B-A3B
+
+# 文件上传配置
+file:
+  upload:
+    path: D:/zhangqi/Documents/aaa/book_drift/uploads

@@ -38,4 +38,10 @@ public class AnnouncementReadServiceImpl extends ServiceImpl<AnnouncementReadMap
         
         return this.getBaseMapper().insert(announcementRead) > 0;
     }
+
+    @Override
+    public Integer countUnreadAnnouncements(Integer userId) {
+        Integer count = this.getBaseMapper().countUnreadAnnouncements(userId);
+        return count != null ? count : 0;
+    }
 }

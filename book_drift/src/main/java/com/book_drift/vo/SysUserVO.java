@@ -51,4 +51,7 @@ public class SysUserVO {
     
     @ApiModelProperty(value = "排名（仅在排行榜中使用）", example = "1")
     private Integer rank;
+
+    @ApiModelProperty(value = "用户头像", example = "/uploads/avatar/xxx.jpg")
+    private String avatar;
 }

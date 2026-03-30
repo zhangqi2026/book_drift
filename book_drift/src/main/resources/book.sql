@@ -93,6 +93,7 @@ CREATE TABLE `sys_user`  (
   `daily_activity_score` int(11) NULL DEFAULT 0 COMMENT '日活跃度分数',
   `weekly_activity_score` int(11) NULL DEFAULT 0 COMMENT '周活跃度分数',
   `monthly_activity_score` int(11) NULL DEFAULT 0 COMMENT '月活跃度分数',
+  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '用户头像',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_student_id`(`student_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '系统用户表' ROW_FORMAT = Compact;

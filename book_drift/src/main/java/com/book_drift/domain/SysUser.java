@@ -82,4 +82,9 @@ public class SysUser implements Serializable {
      * 月活跃度分数
      */
     private Integer monthlyActivityScore;
+
+    /**
+     * 用户头像
+     */
+    private String avatar;
 }

@@ -13,4 +13,8 @@ public interface AnnouncementReadMapper extends BaseMapper<AnnouncementRead> {
 
     @Select("SELECT announcement_id FROM announcement_read WHERE user_id = #{userId}")
     List<Integer> getReadAnnouncementIds(@Param("userId") Integer userId);
+
+    @Select("SELECT COUNT(*) FROM announcement a WHERE a.is_published = 1 " +
+            "AND a.id NOT IN (SELECT ar.announcement_id FROM announcement_read ar WHERE ar.user_id = #{userId})")
+    Integer countUnreadAnnouncements(@Param("userId") Integer userId);
 }

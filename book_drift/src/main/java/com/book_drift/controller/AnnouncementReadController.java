@@ -40,4 +40,13 @@ public class AnnouncementReadController {
         }
         return BaseResult.error("标记失败");
     }
+
+    @GetMapping("/unreadCount/{userId}")
+    @ApiOperation("获取用户未读公告数量")
+    public BaseResult<Integer> getUnreadAnnouncementCount(
+            @ApiParam(value = "用户ID", required = true)
+            @PathVariable Integer userId) {
+        Integer count = announcementReadService.countUnreadAnnouncements(userId);
+        return BaseResult.ok("查询成功", count);
+    }
 }
