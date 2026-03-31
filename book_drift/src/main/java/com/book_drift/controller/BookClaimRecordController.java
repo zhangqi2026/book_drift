@@ -136,4 +136,31 @@ public class BookClaimRecordController {
             return BaseResult.error(e.getMessage());
         }
     }
+
+    @PostMapping("/admin/scan/return/{bookQrcode}")
+    @ApiOperation("管理员扫码还书")
+    public BaseResult<Boolean> adminScanReturnBook(
+            @PathVariable String bookQrcode) {
+        try {
+            BookInfoVO bookVO = bookInfoService.getByQrcode(bookQrcode);
+            if (bookVO == null) {
+                return BaseResult.error("书籍不存在");
+            }
+            if (bookVO.getBookStatus() != 2) {
+                return BaseResult.error("该书籍未被借阅");
+            }
+            BookClaimRecord record = bookClaimRecordService.getCurrentBorrowRecord(bookVO.getId());
+            if (record == null) {
+                return BaseResult.error("没有找到借阅记录");
+            }
+            Integer score = bookClaimRecordService.returnBookWithScore(record.getId());
+            if (score != null) {
+                return BaseResult.ok("还书成功", true).append("score", score);
+            } else {
+                return BaseResult.error("还书失败");
+            }
+        } catch (RuntimeException e) {
+            return BaseResult.error(e.getMessage());
+        }
+    }
 }

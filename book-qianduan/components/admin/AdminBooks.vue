@@ -40,6 +40,14 @@
             <i class="el-icon-search"></i>
             搜索
           </el-button>
+          <el-button 
+            type="success" 
+            @click="showScanner = true"
+            icon="el-icon-camera"
+            class="scan-return-btn"
+          >
+            扫码还书
+          </el-button>
         </div>
       </div>
     </div>
@@ -66,10 +74,24 @@
           </template>
         </el-table-column>
         <el-table-column
-          prop="bookName"
           label="书籍名称"
-          min-width="180"
-        />
+          min-width="250"
+        >
+          <template slot-scope="scope">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span>{{ scope.row.bookName }}</span>
+              <el-button
+                type="info"
+                size="mini"
+                icon="el-icon-qr-scanner"
+                @click="showQrcode(scope.row)"
+                class="qrcode-btn"
+              >
+                二维码
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="author"
           label="作者"
@@ -113,18 +135,10 @@
         </el-table-column>
         <el-table-column
           label="操作"
-          width="540"
+          width="470"
         >
           <template slot-scope="scope">
             <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-              <el-button
-                type="info"
-                size="mini"
-                @click="showQrcode(scope.row)"
-                class="action-btn"
-              >
-                查看二维码
-              </el-button>
               <el-button
                 type="primary"
                 size="mini"
@@ -446,12 +460,25 @@
         </div>
       </div>
     </el-dialog>
+    
+    <!-- 扫码还书组件 -->
+    <qr-scanner
+      :visible="showScanner"
+      mode="return"
+      @close="showScanner = false"
+      @success="handleScanSuccess"
+    />
   </div>
 </template>
 
 <script>
+import QrScanner from '@/components/QrScanner.vue'
+
 export default {
   name: 'AdminBooks',
+  components: {
+    QrScanner
+  },
   data() {
     return {
       bookList: [],
@@ -513,7 +540,9 @@ export default {
       // 二维码相关
       qrDialogVisible: false,
       currentQrBook: null,
-      qrCodeImage: null
+      qrCodeImage: null,
+      // 扫码还书相关
+      showScanner: false
     }
   },
   mounted() {
@@ -890,6 +919,10 @@ export default {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+    },
+    // 扫码成功处理
+    handleScanSuccess(action, bookInfo) {
+      this.fetchBookList()
     }
   }
 }
@@ -1051,7 +1084,7 @@ export default {
 }
 
 .search-input >>> .el-input__inner::placeholder {
-  color: #9aaba;
+  color: #9ab9ab;
 }
 
 .search-input >>> .el-input__inner:focus {
@@ -1091,6 +1124,25 @@ export default {
 }
 
 .search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(171, 240, 209, 0.4);
+}
+
+.scan-return-btn {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  border: none;
+  color: #4a6a5a;
+  font-weight: 600;
+  padding: 0 24px;
+  height: 40px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scan-return-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(171, 240, 209, 0.4);
 }
@@ -1149,6 +1201,20 @@ export default {
   font-weight: 500;
 }
 
+.qrcode-btn {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  border: none;
+  color: #4a6a5a;
+}
+
+.qrcode-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(171, 240, 209, 0.4);
+}
+
 .action-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
@@ -1169,5 +1235,35 @@ export default {
 .custom-dialog >>> .el-dialog__title {
   color: #5a6a5a;
   font-weight: 700;
+}
+
+/* 确保弹窗层级高于遮罩层 */
+.custom-dialog >>> .el-overlay {
+  z-index: 9998 !important;
+}
+
+.custom-dialog >>> .el-dialog__wrapper {
+  z-index: 9999 !important;
+}
+
+.custom-dialog >>> .el-dialog {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+</style>
+
+<style>
+/* 全局样式，确保弹窗层级正确 */
+body .el-overlay {
+  z-index: 9998 !important;
+}
+
+body .el-dialog__wrapper {
+  z-index: 9999 !important;
+}
+
+body .el-dialog {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
 }
 </style>

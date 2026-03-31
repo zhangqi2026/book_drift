@@ -37,7 +37,7 @@
             <el-button type="primary" @click="searchBook" class="search-btn">搜索</el-button>
             <el-button @click="resetSearch" class="reset-btn">重置</el-button>
             <el-button type="success" @click="showScanner = true" icon="el-icon-camera" class="scan-btn">
-              扫码借书/还书
+              扫码借书
             </el-button>
           </div>
           <div class="tags-filter-box">
@@ -445,6 +445,7 @@
       <qr-scanner
         :visible="showScanner"
         :current-user-id="currentUser.id"
+        mode="borrow"
         @close="showScanner = false"
         @success="handleScanSuccess"
       />
@@ -1735,19 +1736,19 @@ export default {
 
 /* 弹窗层级修复 - 确保弹窗在最上层 */
 .custom-dialog {
-  z-index: 3001 !important;
+  z-index: 10000 !important;
 }
 
 .custom-dialog >>> .el-overlay {
-  z-index: 2999 !important;
+  z-index: 9998 !important;
 }
 
 .custom-dialog >>> .el-dialog__wrapper {
-  z-index: 3000 !important;
+  z-index: 9999 !important;
 }
 
 .custom-dialog >>> .el-dialog {
-  z-index: 3001 !important;
+  z-index: 10000 !important;
   pointer-events: auto !important;
 }
 
@@ -1782,5 +1783,21 @@ export default {
   height: 40px;
   padding: 0 24px;
   font-weight: 600;
+}
+</style>
+
+<style>
+/* 全局样式，确保弹窗层级正确 */
+body .el-overlay {
+  z-index: 9998 !important;
+}
+
+body .el-dialog__wrapper {
+  z-index: 9999 !important;
+}
+
+body .el-dialog {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
 }
 </style>

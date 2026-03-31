@@ -1,7 +1,7 @@
 <template>
   <div class="qr-scanner">
     <el-dialog
-      title="扫码操作"
+      :title="mode === 'borrow' ? '扫码借书' : '扫码还书'"
       :visible.sync="dialogVisible"
       width="500px"
       @close="closeDialog"
@@ -54,8 +54,9 @@
           </div>
           
           <div style="margin-top: 20px;">
+            <!-- 借书模式 -->
             <el-button
-              v-if="bookInfo && (bookInfo.bookStatus === 1 || bookInfo.bookStatus === 3)"
+              v-if="mode === 'borrow' && bookInfo && (bookInfo.bookStatus === 1 || bookInfo.bookStatus === 3)"
               type="success"
               @click="handleBorrow"
               :loading="processing"
@@ -63,8 +64,9 @@
             >
               借阅书籍
             </el-button>
+            <!-- 还书模式 -->
             <el-button
-              v-if="bookInfo && bookInfo.bookStatus === 2 && bookInfo.currentHolderId === currentUserId"
+              v-if="mode === 'return' && bookInfo && bookInfo.bookStatus === 2"
               type="primary"
               @click="handleReturn"
               :loading="processing"
@@ -91,6 +93,11 @@ export default {
     currentUserId: {
       type: Number,
       default: null
+    },
+    mode: {
+      type: String,
+      default: 'borrow', // 'borrow' 或 'return'
+      validator: (value) => ['borrow', 'return'].includes(value)
     }
   },
   data() {
@@ -236,13 +243,14 @@ export default {
     },
     
     async handleReturn() {
-      if (!this.currentUserId) {
-        this.$message.warning('请先登录')
-        return
-      }
       this.processing = true
       try {
-        const response = await this.$axios.post(`/bookClaimRecord/scan/return/${this.scanResult}/${this.currentUserId}`)
+        // 管理员模式下，使用管理员还书接口
+        const url = this.mode === 'return' 
+          ? `/bookClaimRecord/admin/scan/return/${this.scanResult}`
+          : `/bookClaimRecord/scan/return/${this.scanResult}/${this.currentUserId}`
+        
+        const response = await this.$axios.post(url)
         if (response.code === 20000) {
           this.$message.success('归还成功！')
           if (response.score !== undefined && response.score !== null) {
@@ -310,7 +318,21 @@ export default {
 <style scoped>
 .qr-scanner {
   position: relative;
-  z-index: 1000;
+  z-index: 9999;
+}
+
+/* 确保弹窗层级高于遮罩层 */
+.custom-dialog >>> .el-overlay {
+  z-index: 9998 !important;
+}
+
+.custom-dialog >>> .el-dialog__wrapper {
+  z-index: 9999 !important;
+}
+
+.custom-dialog >>> .el-dialog {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
 }
 
 .custom-dialog >>> .el-dialog__header {
@@ -321,5 +343,21 @@ export default {
 .custom-dialog >>> .el-dialog__title {
   color: #5a6a5a;
   font-weight: 700;
+}
+</style>
+
+<style>
+/* 全局样式，确保弹窗层级正确 */
+body .el-overlay {
+  z-index: 9998 !important;
+}
+
+body .el-dialog__wrapper {
+  z-index: 9999 !important;
+}
+
+body .el-dialog {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
 }
 </style>

@@ -21,7 +21,7 @@
           </h1>
           <p class="welcome-subtitle">开启今天的书籍漂流之旅</p>
           <el-button type="primary" size="medium" @click="showScanner = true" icon="el-icon-camera" class="scan-btn">
-            扫码借书/还书
+            扫码借书
           </el-button>
         </div>
       </div>
@@ -192,6 +192,7 @@
     <qr-scanner
       :visible="showScanner"
       :current-user-id="currentUser.id"
+      mode="borrow"
       @close="showScanner = false"
       @success="handleScanSuccess"
     />
@@ -767,5 +768,35 @@ export default {
 .custom-pagination >>> .btn-prev,
 .custom-pagination >>> .btn-next {
   border-radius: 8px;
+}
+
+/* 确保弹窗层级高于遮罩层 */
+.custom-dialog >>> .el-overlay {
+  z-index: 9998 !important;
+}
+
+.custom-dialog >>> .el-dialog__wrapper {
+  z-index: 9999 !important;
+}
+
+.custom-dialog >>> .el-dialog {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+</style>
+
+<style>
+/* 全局样式，确保弹窗层级正确 */
+body .el-overlay {
+  z-index: 9998 !important;
+}
+
+body .el-dialog__wrapper {
+  z-index: 9999 !important;
+}
+
+body .el-dialog {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
 }
 </style>
