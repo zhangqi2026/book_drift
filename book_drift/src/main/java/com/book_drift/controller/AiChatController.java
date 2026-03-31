@@ -8,11 +8,15 @@ import com.book_drift.config.AiConfig;
 import com.book_drift.domain.AiChat;
 import com.book_drift.service.AiChatService;
 import com.book_drift.vo.BaseResult;
-import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 
 @RestController
@@ -25,29 +29,34 @@ public class AiChatController {
     @Resource
     private AiConfig aiConfig;
 
-    @Resource
-    private RestTemplate restTemplate;
-
-    @PostMapping("/chat")
-    public BaseResult<String> chat(@RequestBody ChatRequest request) {
-        String question = request.getQuestion();
+    @PostMapping(value = "/chat/stream")
+    public void chatStream(@RequestBody ChatStreamRequest request, HttpServletResponse response) {
+        response.setContentType("text/event-stream");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Connection", "keep-alive");
 
         try {
-            String aiResponse = callQwenAPI(question);
-            return BaseResult.ok("获取回答成功", aiResponse);
+            PrintWriter writer = response.getWriter();
+            callQwenAPIStream(request.getQuestion(), request.getHistory(), writer);
         } catch (Exception e) {
             e.printStackTrace();
-            return BaseResult.error("API调用失败：" + e.getMessage());
         }
     }
 
-    private String callQwenAPI(String question) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + aiConfig.getApiKey());
+    private void callQwenAPIStream(String question, List<MessageItem> history, PrintWriter writer) throws Exception {
+        String fullApiUrl = aiConfig.getApiUrl();
+        if (!fullApiUrl.endsWith("/chat/completions")) {
+            if (fullApiUrl.endsWith("/")) {
+                fullApiUrl += "chat/completions";
+            } else {
+                fullApiUrl += "/chat/completions";
+            }
+        }
 
         JSONObject requestBody = new JSONObject();
         requestBody.put("model", aiConfig.getModel());
+        requestBody.put("stream", true);
         
         JSONArray messages = new JSONArray();
         
@@ -59,8 +68,24 @@ public class AiChatController {
             "3. 分享阅读建议和心得\n" +
             "4. 根据用户的兴趣推荐合适的书籍\n" +
             "\n" +
-            "请用友好、热情的语气回答，并提供详细的推荐理由。");
+            "请用友好、热情的语气回答，并提供详细的推荐理由。\n" +
+            "【重要排版要求】：\n" +
+            "1. 每个段落之间用换行符（\\n）分隔，不要挤在一起\n" +
+            "2. 列表内容每条单独占一行，开头用数字或符号标记\n" +
+            "3. 重要内容单独成段\n" +
+            "4. 不要用圆点（•）代替换行，必须使用真正的换行符（\\n）\n" +
+            "5. 保持排版清晰、易读，段落分明\n" +
+            "6. 【关键】段落之间最多用两个换行符（\\n\\n），不要超过两个，避免间距过大");
         messages.add(systemMessage);
+        
+        if (history != null) {
+            for (MessageItem item : history) {
+                JSONObject msg = new JSONObject();
+                msg.put("role", item.getRole());
+                msg.put("content", item.getContent());
+                messages.add(msg);
+            }
+        }
         
         JSONObject userMessage = new JSONObject();
         userMessage.put("role", "user");
@@ -68,36 +93,51 @@ public class AiChatController {
         messages.add(userMessage);
         requestBody.put("messages", messages);
 
-        HttpEntity<String> entity = new HttpEntity<>(requestBody.toJSONString(), headers);
+        URL url = new URL(fullApiUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Authorization", "Bearer " + aiConfig.getApiKey());
+        connection.setDoOutput(true);
 
-        String fullApiUrl = aiConfig.getApiUrl();
-        if (!fullApiUrl.endsWith("/chat/completions")) {
-            if (fullApiUrl.endsWith("/")) {
-                fullApiUrl += "chat/completions";
-            } else {
-                fullApiUrl += "/chat/completions";
-            }
-        }
+        connection.getOutputStream().write(requestBody.toJSONString().getBytes("UTF-8"));
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+        String line;
+        StringBuilder fullResponse = new StringBuilder();
         
-        ResponseEntity<String> response = restTemplate.postForEntity(
-            fullApiUrl, 
-            entity, 
-            String.class
-        );
-
-        if (response.getStatusCode() == HttpStatus.OK) {
-            JSONObject responseBody = JSON.parseObject(response.getBody());
-            JSONArray choices = responseBody.getJSONArray("choices");
-            if (choices != null && choices.size() > 0) {
-                JSONObject choice = choices.getJSONObject(0);
-                JSONObject messageObj = choice.getJSONObject("message");
-                if (messageObj != null) {
-                    return messageObj.getString("content");
+        while ((line = reader.readLine()) != null) {
+            if (line.startsWith("data: ")) {
+                String data = line.substring(6);
+                if ("[DONE]".equals(data)) {
+                    break;
+                }
+                
+                try {
+                    JSONObject json = JSON.parseObject(data);
+                    JSONArray choices = json.getJSONArray("choices");
+                    if (choices != null && choices.size() > 0) {
+                        JSONObject choice = choices.getJSONObject(0);
+                        JSONObject delta = choice.getJSONObject("delta");
+                        if (delta != null && delta.containsKey("content")) {
+                            String content = delta.getString("content");
+                            if (content != null) {
+                                fullResponse.append(content);
+                                writer.print("data: " + content + "\n\n");
+                                writer.flush();
+                            }
+                        }
+                    }
+                } catch (Exception e) {
                 }
             }
         }
-
-        throw new RuntimeException("API调用失败");
+        
+        reader.close();
+        connection.disconnect();
+        
+        writer.print("data: [DONE]\n\n");
+        writer.flush();
     }
 
     @PostMapping("/save")
@@ -202,46 +242,6 @@ public class AiChatController {
         }
     }
 
-    private String generateAIResponse(String question) {
-        if (question == null || question.trim().isEmpty()) {
-            return "请输入您的问题。";
-        }
-
-        if (question.contains("书籍") || question.contains("书")) {
-            return "关于书籍的问题，您可以在借阅大厅查看所有可借阅的书籍，或者在我的记录中查看您的借阅历史。如果有其他问题，欢迎继续提问！";
-        }
-        
-        if (question.contains("借阅") || question.contains("借")) {
-            return "借阅书籍很简单！您可以在借阅大厅选择喜欢的书籍，点击认领按钮即可。每本书可以借阅30天，请记得按时归还哦！";
-        }
-        
-        if (question.contains("归还") || question.contains("还")) {
-            return "归还书籍时，请在我的记录中找到对应书籍，点击归还按钮即可。归还后书籍会重新回到借阅大厅供其他人借阅。";
-        }
-        
-        if (question.contains("反馈") || question.contains("建议")) {
-            return "您有任何意见或建议都可以在反馈建议页面提交，我们会认真对待每一条反馈！";
-        }
-        
-        if (question.contains("勋章") || question.contains("成就")) {
-            return "通过捐赠书籍、借阅书籍和分享笔记可以获得不同的勋章，您可以在漂流勋章页面查看所有勋章！";
-        }
-
-        return "感谢您的提问！这是一个模拟的AI回答。在实际使用时，这里会接入真实的AI API来提供智能回答。您可以尝试问我关于书籍借阅、归还、反馈等相关问题哦！";
-    }
-
-    static class ChatRequest {
-        private String question;
-
-        public String getQuestion() {
-            return question;
-        }
-
-        public void setQuestion(String question) {
-            this.question = question;
-        }
-    }
-
     static class SaveChatRequest {
         private Long userId;
         private Long sessionId;
@@ -287,6 +287,48 @@ public class AiChatController {
 
         public void setTitle(String title) {
             this.title = title;
+        }
+    }
+
+    static class MessageItem {
+        private String role;
+        private String content;
+
+        public String getRole() {
+            return role;
+        }
+
+        public void setRole(String role) {
+            this.role = role;
+        }
+
+        public String getContent() {
+            return content;
+        }
+
+        public void setContent(String content) {
+            this.content = content;
+        }
+    }
+
+    static class ChatStreamRequest {
+        private String question;
+        private List<MessageItem> history;
+
+        public String getQuestion() {
+            return question;
+        }
+
+        public void setQuestion(String question) {
+            this.question = question;
+        }
+
+        public List<MessageItem> getHistory() {
+            return history;
+        }
+
+        public void setHistory(List<MessageItem> history) {
+            this.history = history;
         }
     }
 }
