@@ -1,6 +1,7 @@
 package com.book_drift.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.book_drift.domain.BookClaimRecord;
 import com.book_drift.service.BookClaimRecordService;
 import com.book_drift.service.BookInfoService;
 import com.book_drift.vo.BaseResult;
@@ -121,12 +122,11 @@ public class BookClaimRecordController {
             if (bookVO.getCurrentHolderId() == null || !bookVO.getCurrentHolderId().equals(userId)) {
                 return BaseResult.error("当前用户不是书籍持有者");
             }
-            Page<BookClaimRecordVO> page = bookClaimRecordService.pageQueryByBookId(1, 1, bookVO.getId());
-            if (page.getRecords() == null || page.getRecords().isEmpty()) {
+            BookClaimRecord record = bookClaimRecordService.getCurrentBorrowRecord(bookVO.getId());
+            if (record == null) {
                 return BaseResult.error("没有找到借阅记录");
             }
-            Integer recordId = page.getRecords().get(0).getId();
-            Integer score = bookClaimRecordService.returnBookWithScore(recordId);
+            Integer score = bookClaimRecordService.returnBookWithScore(record.getId());
             if (score != null) {
                 return BaseResult.ok("还书成功", true).append("score", score);
             } else {

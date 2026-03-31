@@ -93,4 +93,11 @@ public interface BookClaimRecordService {
      * @return 增加的积分
      */
     Integer returnBookWithScore(Integer recordId);
+
+    /**
+     * 获取书籍当前未归还的借阅记录
+     * @param bookId 书籍 ID
+     * @return 未归还的借阅记录，如果没有则返回 null
+     */
+    BookClaimRecord getCurrentBorrowRecord(Integer bookId);
 }

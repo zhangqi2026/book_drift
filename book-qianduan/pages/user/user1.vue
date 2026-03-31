@@ -36,6 +36,9 @@
             />
             <el-button type="primary" @click="searchBook" class="search-btn">搜索</el-button>
             <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+            <el-button type="success" @click="showScanner = true" icon="el-icon-camera" class="scan-btn">
+              扫码借书/还书
+            </el-button>
           </div>
           <div class="tags-filter-box">
             <span class="tags-label">标签筛选：</span>
@@ -437,14 +440,26 @@
           </el-form>
         </div>
       </div>
+      
+      <!-- 扫码组件 -->
+      <qr-scanner
+        :visible="showScanner"
+        :current-user-id="currentUser.id"
+        @close="showScanner = false"
+        @success="handleScanSuccess"
+      />
     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+import QrScanner from '@/components/QrScanner.vue'
 
 export default {
+  components: {
+    QrScanner
+  },
   data() {
     return {
       // 漂流书籍列表
@@ -505,7 +520,9 @@ export default {
       apiBaseUrl: 'http://localhost:3000/api',
       // 标签相关
       allTags: [],
-      selectedTagIds: []
+      selectedTagIds: [],
+      // 扫码相关
+      showScanner: false
     }
   },
   mounted() {
@@ -1205,6 +1222,10 @@ export default {
     handleCurrentChange(val) {
       this.currentPage = val
       this.fetchBookList()
+    },
+    // 扫码成功处理
+    handleScanSuccess(action, bookInfo) {
+      this.fetchBookList()
     }
   }
 }
@@ -1447,6 +1468,21 @@ export default {
   height: 44px;
   padding: 0 24px;
   font-weight: 600;
+}
+
+.scan-btn {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #abf0d1 0%, #d4eea7 100%);
+  border: none;
+  color: #4a6a5a;
+  font-weight: 600;
+  padding: 0 24px;
+  transition: all 0.3s ease;
+}
+
+.scan-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(171, 240, 209, 0.5);
 }
 
 .tags-filter-box {

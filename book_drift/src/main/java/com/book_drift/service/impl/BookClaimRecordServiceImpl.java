@@ -247,6 +247,16 @@ public class BookClaimRecordServiceImpl extends ServiceImpl<BookClaimRecordMappe
         return true;
     }
 
+    @Override
+    public BookClaimRecord getCurrentBorrowRecord(Integer bookId) {
+        QueryWrapper<BookClaimRecord> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("book_id", bookId)
+                    .isNull("return_time") // 未归还的记录
+                    .orderByDesc("claim_time")
+                    .last("LIMIT 1");
+        return this.getBaseMapper().selectOne(queryWrapper);
+    }
+
     /**
      * 将 BookClaimRecord 转换为 BookClaimRecordVO
      * @param bookClaimRecord 记录实体
