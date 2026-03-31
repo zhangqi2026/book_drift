@@ -30,7 +30,7 @@
             <div class="card-body">
               <div class="chat-messages" ref="chatMessages">
                 <div v-for="(message, index) in messages" :key="index" 
-                     :class="['message', message.role === 'user' ? 'user-message' : 'ai-message']">
+                   :class="['message', message.role === 'user' ? 'user-message' : 'ai-message']">
                   <div class="message-avatar">
                     <div :class="['avatar', message.role === 'user' ? 'user-avatar' : 'ai-avatar']">
                       {{ message.role === 'user' ? '用' : 'AI' }}
@@ -38,18 +38,13 @@
                   </div>
                   <div class="message-content">
                     <div class="message-text" v-if="message.role === 'user'">{{ message.content }}</div>
-                    <div class="message-text markdown-content" v-else v-html="renderMarkdown(message.content)"></div>
-                    <div class="message-time">{{ formatTime(message.time) }}</div>
-                  </div>
-                </div>
-                <div v-if="loading" class="message ai-message">
-                  <div class="message-avatar">
-                    <div class="avatar ai-avatar">AI</div>
-                  </div>
-                  <div class="message-content">
-                    <div class="message-text">
-                      <i class="el-icon-loading"></i> 正在思考中...
+                    <div class="message-text markdown-content" v-else>
+                      <span v-if="loading && index === messages.length - 1">
+                        <i class="el-icon-loading"></i> 
+                      </span>
+                      <span v-html="renderMarkdown(message.content)"></span>
                     </div>
+                    <div class="message-time">{{ formatTime(message.time) }}</div>
                   </div>
                 </div>
               </div>
@@ -142,6 +137,10 @@ export default {
       
       let html = content
       
+      html = html.replace(/\\n/g, '\n')
+      
+      html = html.replace(/\n{3,}/g, '\n\n')
+      
       html = html.replace(/&/g, '&amp;')
       html = html.replace(/</g, '&lt;')
       html = html.replace(/>/g, '&gt;')
@@ -149,25 +148,7 @@ export default {
       html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       html = html.replace(/__(.*?)__/g, '<strong>$1</strong>')
       
-      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
-      html = html.replace(/_(.*?)_/g, '<em>$1</em>')
-      
       html = html.replace(/`(.*?)`/g, '<code>$1</code>')
-      
-      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      
-      html = html.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
-      
-      html = html.replace(/^- (.*$)/gim, '<li>$1</li>')
-      html = html.replace(/^\* (.*$)/gim, '<li>$1</li>')
-      
-      html = html.replace(/(?:<li>.*<\/li>\s*)+/g, match => {
-        return '<ul>' + match + '</ul>'
-      })
-      
-      html = html.replace(/\n/g, '<br>')
       
       return html
     },
@@ -200,46 +181,114 @@ export default {
       this.inputMessage = ''
       this.loading = true
       
+      const aiMessageIndex = this.messages.length
+      this.messages.push({
+        role: 'assistant',
+        content: '',
+        time: new Date()
+      })
+      
       this.scrollToBottom()
       
-      try {
-        const aiResponse = await this.callAI(question)
-        
-        const aiMessage = {
-          role: 'assistant',
-          content: aiResponse,
-          time: new Date()
+      let fullResponse = ''
+      let updateTimer = null
+      let pendingUpdate = false
+      
+      const scheduleUpdate = () => {
+        if (!pendingUpdate) {
+          pendingUpdate = true
+          updateTimer = requestAnimationFrame(() => {
+            this.messages[aiMessageIndex].content = fullResponse
+            this.scrollToBottom()
+            pendingUpdate = false
+          })
         }
+      }
+      
+      try {
+        const history = this.messages.slice(0, aiMessageIndex).map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
         
-        this.messages.push(aiMessage)
+        await this.callAIStream(question, history, (chunk) => {
+          if (chunk === '[DONE]') {
+            if (updateTimer) cancelAnimationFrame(updateTimer)
+            this.messages[aiMessageIndex].content = fullResponse
+            this.scrollToBottom()
+          } else if (chunk.startsWith('[ERROR]')) {
+            throw new Error(chunk.substring(7))
+          } else {
+            fullResponse += chunk
+            scheduleUpdate()
+          }
+        })
         
-        await this.saveConversation(question, aiResponse)
+        await this.saveConversation(question, fullResponse)
         
       } catch (error) {
         console.error('AI调用失败:', error)
         this.$message.error('AI服务暂时不可用，请稍后重试')
         
-        const errorMessage = {
-          role: 'assistant',
-          content: '抱歉，我暂时无法回答你的问题，请稍后再试。',
-          time: new Date()
-        }
-        this.messages.push(errorMessage)
+        this.messages[aiMessageIndex].content = '抱歉，我暂时无法回答你的问题，请稍后再试。'
       } finally {
         this.loading = false
         this.scrollToBottom()
       }
     },
-    async callAI(question) {
-      const response = await this.$axios.post('/ai/chat', {
-        question: question
+    callAIStream(question, history, onChunk) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', `${this.$axios.defaults.baseURL}/ai/chat/stream`)
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        
+        let buffer = ''
+        let isDone = false
+        
+        xhr.onprogress = () => {
+          if (xhr.status === 200 && !isDone) {
+            const responseText = xhr.responseText
+            const newData = responseText.substring(buffer.length)
+            buffer = responseText
+            
+            const lines = newData.split('\n')
+            
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i].trim()
+              if (line.startsWith('data: ')) {
+                const data = line.substring(6)
+                if (data) {
+                  if (data === '[DONE]') {
+                    isDone = true
+                    onChunk(data)
+                    resolve()
+                    return
+                  } else {
+                    onChunk(data)
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        xhr.onload = () => {
+          if (xhr.status !== 200 && !isDone) {
+            reject(new Error('请求失败'))
+          }
+        }
+        
+        xhr.onerror = () => {
+          if (!isDone) {
+            reject(new Error('网络错误'))
+          }
+        }
+        
+        xhr.send(JSON.stringify({
+          question: question,
+          history: history
+        }))
       })
-      
-      if (response.code === 20000) {
-        return response.data
-      } else {
-        throw new Error(response.message || 'AI调用失败')
-      }
     },
     async saveConversation(question, answer) {
       if (!this.currentSessionId) {
@@ -323,14 +372,22 @@ export default {
       })
     },
     async clearHistory() {
-      try {
-        await this.$axios.post(`/ai/clear/${this.currentUser.id}`)
-        this.historyList = []
-        this.$message.success('历史记录已清空')
-      } catch (error) {
-        console.error('清空历史记录失败:', error)
-        this.$message.error('清空历史记录失败')
-      }
+      this.$confirm('确定要清空所有历史记录吗？此操作不可恢复！', '提示', {
+        confirmButtonText: '确定清空',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async () => {
+        try {
+          await this.$axios.post(`/ai/clear/${this.currentUser.id}`)
+          this.historyList = []
+          this.clearChat()
+          this.$message.success('历史记录已清空')
+        } catch (error) {
+          console.error('清空历史记录失败:', error)
+          this.$message.error('清空历史记录失败')
+        }
+      }).catch(() => {
+      })
     },
     scrollToBottom() {
       this.$nextTick(() => {
@@ -705,7 +762,7 @@ export default {
 .message-text {
   padding: 14px 18px;
   border-radius: 16px;
-  line-height: 1.6;
+  line-height: 1.8;
   word-break: break-word;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
@@ -719,6 +776,7 @@ export default {
   background: white;
   color: #5a6a5a;
   border: 1px solid rgba(171, 240, 209, 0.3);
+  white-space: pre-wrap;
 }
 
 .markdown-content :deep(strong) {
@@ -767,6 +825,15 @@ export default {
   background: rgba(171, 240, 209, 0.1);
   border-radius: 0 8px 8px 0;
   padding: 12px 16px;
+}
+
+.markdown-content :deep(.paragraph) {
+  margin: 0 0 12px 0;
+  line-height: 1.8;
+}
+
+.markdown-content :deep(.paragraph:last-child) {
+  margin-bottom: 0;
 }
 
 .markdown-content :deep(ul) {
